@@ -149,9 +149,10 @@ sub move_robot(){
 			else if (color == 3) {
 				turn_left(180);
 			}
-			/* Upon reading Yellow, turn right */
-			else if (color == 3) {
-				turn_right(90);
+			/* Upon reading Yellow */
+			else if (color == 4) {
+				Off(OUT_AB); /* stop at intersection */
+				scan_surroundings();
 			}
 			/* Upon reading Blue, turn left */
         	else if (color == 2) {
@@ -186,8 +187,29 @@ intersection scan_surroundings(){
     // direction of the robot.
     //
     ////////////////////////////////////////////////////////////////////////////
-
-    return rsense;
+	ColorSensorReadType csr;
+	csr.Port=IN_1;
+    SetSensorColorFull(csr.Port);
+    SysColorSensorRead(csr);
+	unsigned int rawdata[];
+    int color = Sensor(IN_1);
+	int old_color = -1;	
+	int corners = 4;
+	int angle = 75; /* placeholder value, need value to move robot intially NE */
+	 while (corners > 0) {
+    	OnFwd(OUT_AB, angle); 
+		color = Sensor(IN_1);
+		PlayToneEx((color * 300) + 200, 200, 4, FALSE);
+		Wait(100);
+		angle += 25; /* placeholeder value, find constant value to change angle to next direction */
+		corners--;
+    }
+	
+	
+	return rsense; 			
+	
+	
+	
 }
 
 
