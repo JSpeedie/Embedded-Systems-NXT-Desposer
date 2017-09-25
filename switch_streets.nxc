@@ -93,6 +93,11 @@ struct intersection{
 
 sub turn_right(int angle) {
 	Off(OUT_AB);
+	Wait(500);
+	OnFwd(OUT_AB, 25);
+	// test this you fckin chimps
+	Wait(650);
+	Off(OUT_AB);
 	OnFwd(OUT_A, 25);
 	OnRev(OUT_B, 25);
 	Wait(23 * angle);
@@ -105,42 +110,6 @@ sub turn_left(int angle) {
 	OnRev(OUT_A, 25);
 	Wait(23 * angle);
 	Off(OUT_AB);
-}
-
-/* This function scans the surroundings of the robot.
-   It takes readings of the colour of the 4 squares surrounding the
-   intersection and returns an intersection variable which holds the data.
-*/
-intersection scan_surroundings(){
-    intersection rsense;
-    ////////////////////////////////////////////////////////////////////////////
-    // TO DO:
-    //
-    // Implement a function in which the robot will scan the colour of the
-    // surrounding squares at an interesection.
-    // It will use the colour sensor to take readings from all four squares
-    // in each of the NE, SE, SW, NW directions relative to the forward facing
-    // direction of the robot.
-    //
-    ////////////////////////////////////////////////////////////////////////////
-	ColorSensorReadType csr;
-	csr.Port=IN_1;
-    SetSensorColorFull(csr.Port);
-    SysColorSensorRead(csr);
-	unsigned int rawdata[];
-    int color = Sensor(IN_1);
-	int old_color = -1;
-	int corners = 4;
-	 while (corners > 0) {
-		TextOut(0, 32, "crnr = " + NumToStr(corners) + "");
-		turn_right(45);
-		Wait(1000);
-		color = Sensor(IN_1);
-		PlayToneEx((color * 300) + 200, 200, 4, FALSE);
-		corners--;
-    }
-
-	return rsense;
 }
 
 /* Subroutine which moves the robot forward from one intersection to the next
@@ -170,7 +139,7 @@ sub move_robot(){
 	int old_color = -1;
 	TextOut(0, 24, "Blk:1 Blu:2 Gr:3");
 	TextOut(0, 16, "Yel:4 Red:5 Wh:6");
-    while (color != 4) {
+    while (1) {
     	color = Sensor(IN_1);
     	//colorRaw = ReadSensorColorRaw(IN_1, rawdata);
 		TextOut(0, 0, "color is = " + NumToStr(color) + "");
@@ -189,7 +158,7 @@ sub move_robot(){
 			}
 			/* Upon reading Yellow */
 			else if (color == 4) {
-				scan_surroundings();
+				turn_right(90);
 			}
 			/* Upon reading Blue, turn left */
         	else if (color == 2) {
