@@ -131,7 +131,7 @@ intersection scan_surroundings(){
     int color = Sensor(IN_1);
 	int old_color = -1;
 	int corners = 4;
-	 while (corners > 0) {
+	while (corners > 0) {
 		TextOut(0, 32, "crnr = " + NumToStr(corners) + "");
 		turn_right(45);
 		Wait(1000);
@@ -139,6 +139,34 @@ intersection scan_surroundings(){
 		PlayToneEx((color * 300) + 200, 200, 4, FALSE);
 		corners--;
     }
+	
+		
+		/* move diagonally to scan NE, then move backwards to SW, adjust straight then forwards to NW, then adjust SE and move backwards to SE
+		   then move forwards back to yellow square, and once it detects yellow it orients itself straight again */
+			
+			// repeats four times in while loop
+			
+			turn_right(45)
+			color = Sensor(IN_1);
+			PlayToneEx((color * 300) + 200, 200, 4, FALSE);  // scan colour
+			OnRev(OUT_AB, 25);
+			Wait(25);    		// placeholder value
+			PlayToneEx((color * 300) + 200, 200, 4, FALSE);  // scan colour
+			turn_left(20);  // adjusting so the robot is straight
+			OnFwd(OUT_AB, 25); // go straight to NW
+			Wait(25);
+			PlayToneEx((color * 300) + 200, 200, 4, FALSE);  // scan colour
+			turn_right(20); // placeholder value
+			OnRev(OUT_AB, 25);  // go backwards to SE
+			PlayToneEx((color * 300) + 200, 200, 4, FALSE);  // scan colour
+
+			OnFwd(OUT_AB, 25)
+			if(color == 4){
+				Wait(25);
+				turn_left(15); // back to starting position on yellow square
+			}
+				
+		*/
 
 	return rsense;
 }
