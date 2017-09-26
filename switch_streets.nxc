@@ -93,10 +93,10 @@ struct intersection{
 
 sub turn_right(int angle) {
 	Off(OUT_AB);
-	Wait(500);
+	Wait(600);
 	OnFwd(OUT_AB, 25);
 	// test this you fckin chimps
-	Wait(650);
+	Wait(850);
 	Off(OUT_AB);
 	OnFwd(OUT_A, 25);
 	OnRev(OUT_B, 25);
@@ -110,6 +110,57 @@ sub turn_left(int angle) {
 	OnRev(OUT_A, 25);
 	Wait(23 * angle);
 	Off(OUT_AB);
+}
+
+int turn_right2(int angle){
+	ColorSensorReadType csr;
+        csr.Port=IN_1;
+    SetSensorColorFull(csr.Port);
+    SysColorSensorRead(csr);
+	    int color = Sensor(IN_1);
+	
+	Off(OUT_AB);
+        Wait(500);
+	OnFwd(OUT_A, 20);
+	OnRev(OUT_B, 20);
+        // test this you fckin chimps
+        Wait(23 * angle);
+        Off(OUT_AB);
+
+	return color;
+
+}
+
+int turn_left2(int angle){
+
+	       ColorSensorReadType csr;
+        csr.Port=IN_1;
+    SetSensorColorFull(csr.Port);
+    SysColorSensorRead(csr);
+            int color = Sensor(IN_1);
+
+
+	 Off(OUT_AB);
+        Wait(500);
+        OnFwd(OUT_B, 20);
+	OnRev(OUT_A, 20);
+        // test this you fckin chimps
+        Wait(650);
+        Off(OUT_AB);
+
+	return color;
+
+}
+
+sub movBlack(){
+	               ColorSensorReadType csr;
+        csr.Port=IN_1;
+    SetSensorColorFull(csr.Port);
+    SysColorSensorRead(csr);
+            int color = Sensor(IN_1);
+
+
+	 OnFwd(OUT_AB, 25);
 }
 
 /* Subroutine which moves the robot forward from one intersection to the next
@@ -135,6 +186,7 @@ sub move_robot(){
     SetSensorColorFull(csr.Port);
     SysColorSensorRead(csr);
 	unsigned int rawdata[];
+	int angle;
     int color = Sensor(IN_1);
 	int old_color = -1;
 	TextOut(0, 24, "Blk:1 Blu:2 Gr:3");
@@ -142,32 +194,30 @@ sub move_robot(){
     while (1) {
     	color = Sensor(IN_1);
     	//colorRaw = ReadSensorColorRaw(IN_1, rawdata);
-		TextOut(0, 0, "color is = " + NumToStr(color) + "");
+		//TextOut(0, 0, "color is = " + NumToStr(color) + "");
 			/* Upon reading White, go back */
-        	if (color == 6) {
-				OnRev(OUT_B, 25);
-				OnRev(OUT_A, 25);
-			}
+				angle = 15;
+				int colorL, colorR;
+				while((colorL != 1 && colorL != 5 && colorL != 4)
+					|| (colorR != 1 && colorR != 5 && colorR != 4){
+						colorR = turn_right2(angle);
+						if(colorR != 1)
+							colorL = turn_left2(angle);
+						angle += 30;
+					}
+				}
+				movBlack();
 			/* Upon reading Red, turn around */
-        	else if (color == 5) {
+        	if (color == 5) {
 				turn_right(180);
-			}
-			/* Upon reading Green turn around to the left */
-			else if (color == 3) {
-				turn_left(180);
 			}
 			/* Upon reading Yellow */
 			else if (color == 4) {
 				turn_right(90);
 			}
-			/* Upon reading Blue, turn left */
-        	else if (color == 2) {
-				turn_left(90);
-			}
 			/* Upon reading Black, go forward */
         	else if (color == 1) {
-				OnFwd(OUT_B, 25);
-				OnFwd(OUT_A, 25);
+				OnFwd(OUT_AB, 25);
 			}
 		if (color != old_color) {
 			old_color = color;
