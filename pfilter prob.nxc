@@ -106,7 +106,10 @@ sub move_robot(){
     //  make turns perfectly and go straight forward each time.
     //
     ////////////////////////////////////////////////////////////////////////////
-
+	
+	// add code for moving robot forward to next intersection
+	// and if detects red change_direction
+	// also add code for checking if robot goes off street, and adjust back on to street
 }
 
 /* This function scans the surroundings of the robot.
@@ -126,6 +129,7 @@ intersection scan_surroundings(){
     //
     ////////////////////////////////////////////////////////////////////////////
 
+	// add code for scanning intersection
     return rsense;
 }
 
@@ -223,7 +227,8 @@ particle move(particle p){
          // previous intersection it was at.
          //
          ///////////////////////////////////////////////////////////////////////
-
+		
+		
          return p;
 }
 
@@ -434,7 +439,12 @@ task main(){
    /////////////////////////////////////////////////////////////////////////////
    while (robp < THRESHOLD){ /* run the update loop until an acceptable
                                probability is obtained */
-      /* implement me */
+      rsense = scan_surroundings()
+	  listLen = ArrayLen(list)
+	  for(int i = 0; i < listLen; i++){
+		//list[i].sense(map, list[i].x, list[i].y, list[i].theta, ??)
+	  }
+	  
    }
    PlayToneEx(Random(1000) + 200, 400, 3, FALSE);
    
