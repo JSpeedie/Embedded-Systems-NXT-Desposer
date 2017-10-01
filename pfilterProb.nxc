@@ -479,14 +479,18 @@ int sense(intersection map[], int x, int y, int dir, int heading){
     // since we are facing east, north gets updated so we have to calculate
     // new dir
     else if(heading == EAST) {
-      return map[index].((dir + 90)%360);
+      dir = (dir + 90)%360);
+      return map[index].dir;
     }
     // same as above but for south
     else if(heading = SOUTH) {
-      return map[index].((dir + 180)%360); 
+      dir = (dir + 180)%360);
+      return map[index].dir; 
     }
+
     else if(heading = WEST) {
-      return map[index].((dir + 270)%360); 
+      dir = (dir + 270)%360);
+      return map[index].dir; 
     }
     else {
       return -1;
