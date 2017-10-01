@@ -177,7 +177,7 @@ int find_road_left() {
 	OnRev(OUT_A, 20);
 	/* As long as the colour being scanned is not representative of a road and
 	 * it hasn't been too long */
-	while ((color != 4 || color != 1) && measurements < search_time) {
+	while ((color != 4 && color != 1) && measurements < search_time) {
 		Wait(1);
 		measurements++;
 		color = Sensor(IN_1);
@@ -209,7 +209,7 @@ int find_road_right() {
 	OnRev(OUT_B, 20);
 	/* As long as the colour being scanned is not representative of a road and
 	 * it hasn't been too long */
-	while ((color != 4 || color != 1) && measurements < search_time) {
+	while ((color != 4 && color != 1) && measurements < search_time) {
 		Wait(1);
 		measurements++;
 		color = Sensor(IN_1);
@@ -244,10 +244,12 @@ sub FindRoad() {
 			color = find_road_left();
 			/* If it found a road or intersection, exit the loop */
 			if (color == 4 || color == 1) {
+				TextOut(0, 24, "found one");
 				break;
 			}
 		/* If it found a road or intersection, exit the loop */
 		} else if (color == 4 || color == 1) {
+			TextOut(0, 24, "found one");
 			break;
 		}
 
