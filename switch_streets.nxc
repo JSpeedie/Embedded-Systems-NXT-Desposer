@@ -164,10 +164,6 @@ sub movBlack(){
 }
 
 int find_road_left() {
-	ColorSensorReadType csr;
-	csr.Port=IN_1;
-	SetSensorColorFull(csr.Port);
-	SysColorSensorRead(csr);
 	int color = Sensor(IN_1);
 	int measurements = 0;
 	int search_time = 1500;
@@ -182,7 +178,7 @@ int find_road_left() {
 		measurements++;
 		color = Sensor(IN_1);
 		PlayToneEx((color * 300) + 200, 100, 1, FALSE);
-		TextOut(0, 0, "color = " + NumToStr(color) + "");
+		TextOut(0, 32, "color = " + NumToStr(color) + "");
 	}
 	/* Once a road has been found or the time limit hit, stop turning. */
 	Off(OUT_AB);
@@ -197,10 +193,6 @@ int find_road_left() {
 }
 
 int find_road_right() {
-	ColorSensorReadType csr;
-	csr.Port=IN_1;
-	SetSensorColorFull(csr.Port);
-	SysColorSensorRead(csr);
 	int color = Sensor(IN_1);
 	int measurements = 0;
 	int search_time = 1500;
@@ -215,7 +207,7 @@ int find_road_right() {
 		measurements++;
 		color = Sensor(IN_1);
 		PlayToneEx((color * 300) + 200, 100, 1, FALSE);
-		TextOut(0, 0, "color = " + NumToStr(color) + "");
+		TextOut(0, 32, "color = " + NumToStr(color) + "");
 	}
 	/* Once a road has been found or the time limit hit, stop turning. */
 	Off(OUT_AB);
@@ -301,7 +293,7 @@ sub move_robot(){
 	while (1) {
 		color = Sensor(IN_1);
 		// TODO: remove
-		if (color != 1 || color != 4) {
+		if (color != 1 && color != 4) {
 			FindRoad();
 		}
 		//colorRaw = ReadSensorColorRaw(IN_1, rawdata);
@@ -636,7 +628,7 @@ task main(){
                                probability is obtained
       implement me
    }*/
-   PlayToneEx(Random(1000) + 200, 400, 3, FALSE);
+   //PlayToneEx(Random(1000) + 200, 400, 3, FALSE);
    
    /* When we are fairly confident about the robot's position, we can move on
       to the task given.
