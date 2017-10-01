@@ -237,7 +237,7 @@ sub FindRoad() {
 	int color = Sensor(IN_1);
 	/* While the left scanned color and the right scanned color are not
 	 * yellow or black (the intersection and road colors) */
-	while (color != 4 || color != 1) {
+	while (color != 4 && color != 1) {
 		color = find_road_right();
 		/* If searching to the right was NOT successful, search to the left */
 		if (color == -1) {
@@ -298,7 +298,6 @@ sub move_robot(){
 		// TODO: remove
 		if (color != 1 || color != 4) {
 			FindRoad();
-			PlayToneEx((color * 300) + 200, 200, 4, FALSE);
 		}
 		//colorRaw = ReadSensorColorRaw(IN_1, rawdata);
 		//TextOut(0, 0, "color is = " + NumToStr(color) + "");
