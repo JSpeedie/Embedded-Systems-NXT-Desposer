@@ -96,16 +96,16 @@ struct intersection{
 
 sub turn_right(int angle) {
   Off(OUT_AB);
-  OnFwd(OUT_A, 25);
-  OnRev(OUT_B, 25);
+  OnRev(OUT_A, 25);
+  OnFwd(OUT_B, 25);
   Wait(23 * angle);
   Off(OUT_AB);
 }
 
 sub turn_left(int angle) {
   Off(OUT_AB);
-  OnFwd(OUT_B, 25);
-  OnRev(OUT_A, 25);
+  OnRev(OUT_B, 25);
+  OnFwd(OUT_A, 25);
   Wait(23 * angle);
   Off(OUT_AB);
 }
@@ -122,8 +122,8 @@ int find_road_left() {
   int search_time = 1500;
 
   /* Start turning the robot right */
-  OnFwd(OUT_B, 50);
-  OnRev(OUT_A, 50);
+  OnRev(OUT_B, 50);
+  OnFwd(OUT_A, 50);
   /* As long as the colour being scanned is not representative of a road and
    * it hasn't been too long */
   while ((color != 4 || color != 1) && measurements < search_time) {
@@ -153,8 +153,8 @@ int find_road_right() {
   int search_time = 1500;
 
   /* Start turning the robot right */
-  OnFwd(OUT_A, 50);
-  OnRev(OUT_B, 50);
+  OnRev(OUT_A, 50);
+  OnFwd(OUT_B, 50);
   /* As long as the colour being scanned is not representative of a road and
    * it hasn't been too long */
   while ((color != 4 || color != 1) && measurements < search_time) {
@@ -199,7 +199,7 @@ sub FindRoad() {
     }
     /* If searching left and right wasn't successful, move forward and try
      * again */
-    OnFwd(OUT_AB, 50);
+    OnRev(OUT_AB, 50);
     Wait(200);
     Off(OUT_AB);
     color = Sensor(IN_1);
@@ -240,7 +240,7 @@ sub move_robot(){
   TextOut(0, 24, "Blk:1 Blu:2 Gr:3");
   TextOut(0, 16, "Yel:4 Red:5 Wh:6");
     // TODO: remove: move forward at all times
-    OnFwd(OUT_AB, 50);
+    OnRev(OUT_AB, 50);
   while (1) {
     color = Sensor(IN_1);
     // TODO: remove
@@ -269,7 +269,7 @@ intersection scan_surroundings(){
     int color = Sensor(IN_1);
     int old_color = -1;
       
-    OnFwd(OUT_AB, 25);
+    OnRev(OUT_AB, 25);
     Wait(650);
     turn_right(35);
     Wait(200);
@@ -288,10 +288,10 @@ intersection scan_surroundings(){
     PlayToneEx((color * 300) + 200, 200, 4, FALSE);  // scan colour
     turn_right(35); // placeholder value
     if(color != 4) {
-      OnRev(OUT_AB, 20);
+      OnFwd(OUT_AB, 20);
     }
 
-    OnRev(OUT_AB, 25);
+    OnFwd(OUT_AB, 25);
     Wait(900);
     turn_right(30);
     Wait(200);
@@ -311,7 +311,7 @@ intersection scan_surroundings(){
     turn_right(45); // placeholder value
     
     if(color != 4){
-      OnFwd(OUT_AB, 15);
+      OnRev(OUT_AB, 15);
     }
 
 
