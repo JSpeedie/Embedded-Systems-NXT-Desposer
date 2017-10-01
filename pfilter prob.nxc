@@ -16,16 +16,16 @@
 
 /* macros for directions, chosen to not conflict with other definitions
    and to allow arithmetic between directions*/
-#define NORTH 100
-#define EAST 101
-#define SOUTH 102
-#define WEST 103
+#define NORTH 0
+#define EAST 90
+#define SOUTH 180
+#define WEST 270
 
 /* macros for diagonal directions */
-#define NORTHEAST 1000
-#define SOUTHEAST 1001
-#define SOUTHWEST 1002
-#define NORTHWEST 1003
+#define NORTHEAST 45
+#define SOUTHEAST 135
+#define SOUTHWEST 225
+#define NORTHWEST 315
 
 /* File related macros */
 #define FILENAME "mapdata.txt"
@@ -93,30 +93,174 @@ struct intersection{
 
 /* Subroutine which moves the robot forward from one intersection to the next
 */
+int find_road_left() {
+  ColorSensorReadType csr;
+  csr.Port=IN_1;
+  SetSensorColorFull(csr.Port);
+  SysColorSensorRead(csr);
+  int color = Sensor(IN_1);
+  int measurements = 0;
+  int search_time = 1500;
+
+  /* Start turning the robot right */
+  OnFwd(OUT_B, 50);
+  OnRev(OUT_A, 50);
+  /* As long as the colour being scanned is not representative of a road and
+   * it hasn't been too long */
+  while ((color != 4 || color != 1) && measurements < search_time) {
+    Wait(1);
+    measurements++;
+    color = Sensor(IN_1);
+  }
+  /* Once a road has been found or the time limit hit, stop turning. */
+  Off(OUT_AB);
+
+  /* If the time limit was hit, return -1 */
+  if (measurements == search_time) {
+    return -1;
+  /* If the road was found, return the color */
+  } else {
+    return color;
+  }
+}
+
+int find_road_right() {
+  ColorSensorReadType csr;
+  csr.Port=IN_1;
+  SetSensorColorFull(csr.Port);
+  SysColorSensorRead(csr);
+  int color = Sensor(IN_1);
+  int measurements = 0;
+  int search_time = 1500;
+
+  /* Start turning the robot right */
+  OnFwd(OUT_A, 50);
+  OnRev(OUT_B, 50);
+  /* As long as the colour being scanned is not representative of a road and
+   * it hasn't been too long */
+  while ((color != 4 || color != 1) && measurements < search_time) {
+    Wait(1);
+    measurements++;
+    color = Sensor(IN_1);
+  }
+  /* Once a road has been found or the time limit hit, stop turning. */
+  Off(OUT_AB);
+
+  /* If the time limit was hit, return -1 */
+  if (measurements == search_time) {
+    return -1;
+  /* If the road was found, return the color */
+  } else {
+    return color;
+  }
+}
+
+/* Goal of this function is for the robot to end up with the sensor
+ * on a black or yellow section. It will not orientate the robot however */
+sub FindRoad() {
+  ColorSensorReadType csr;
+  csr.Port=IN_1;
+  SetSensorColorFull(csr.Port);
+  SysColorSensorRead(csr);
+  int color = Sensor(IN_1);
+  /* While the left scanned color and the right scanned color are not
+   * yellow or black (the intersection and road colors) */
+  while (color != 4 || color != 1) {
+    color = find_road_right();
+    /* If searching to the right was not successful, search to the left */
+    if (color == -1) {
+      color = find_road_left();
+      /* If searching to the left WAS successful */
+      if (color != -1) {
+        break;
+      }
+    /* If searching to the right WAS successful */
+    } else {
+      break;
+    }
+    /* If searching left and right wasn't successful, move forward and try
+     * again */
+    OnFwd(OUT_AB, 50);
+    Wait(200);
+    Off(OUT_AB);
+    color = Sensor(IN_1);
+    /* If after moving, it reads red, turn around */
+    if (color == 5) {
+      turn_right(180);
+    }
+  }
+}
+
+
+/* Subroutine which moves the robot forward from one intersection to the next
+*/
 sub move_robot(){
-    ////////////////////////////////////////////////////////////////////////////
-    //  TO DO:
-    //
-    //  Complete this subroutine.
-    //  Your robot will need to nagivates its way from one interesection to the
-    //  next. If it reaches a red boundary, it will do a 180 degree turn and
-    //  return to the previous intersection facing in the opposite direction.
-    //
-    //  You may need to account for motor "noise" as your robot will not always
-    //  make turns perfectly and go straight forward each time.
-    //
-    ////////////////////////////////////////////////////////////////////////////
-	
-	// add code for moving robot forward to next intersection
-	// and if detects red change_direction
-	// also add code for checking if robot goes off street, and adjust back on to street
+  ////////////////////////////////////////////////////////////////////////////
+  //  TO DO:
+  //
+  //  Complete this subroutine.
+  //  Your robot will need to nagivates its way from one interesection to the
+  //  next. If it reaches a red boundary, it will do a 180 degree turn and
+  //  return to the previous intersection facing in the opposite direction.
+  //
+  //  You may need to account for motor "noise" as your robot will not always
+  //  make turns perfectly and go straight forward each time.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+
+  // Black: 1, Blue: 2, Green: 3, Yellow: 4, Red: 5, White: 6
+
+  ColorSensorReadType csr;
+  csr.Port=IN_1;
+  SetSensorColorFull(csr.Port);
+  SysColorSensorRead(csr);
+  unsigned int rawdata[];
+  int angle;
+  int color = Sensor(IN_1);
+  int old_color = -1;
+  TextOut(0, 24, "Blk:1 Blu:2 Gr:3");
+  TextOut(0, 16, "Yel:4 Red:5 Wh:6");
+    // TODO: remove: move forward at all times
+    OnFwd(OUT_AB, 50);
+  while (1) {
+    color = Sensor(IN_1);
+    // TODO: remove
+    if (color != 1 || color != 4) {
+      FindRoad();
+    }
+    //colorRaw = ReadSensorColorRaw(IN_1, rawdata);
+    //TextOut(0, 0, "color is = " + NumToStr(color) + "");
+      /* Upon reading White, go back */
+      /* Upon reading Red, turn around */
+      /*if (color == 5) {
+        turn_right(180);
+      }*/
+      /* Upon reading Yellow */
+      /*else if (color == 4) {
+        turn_right(90);
+      }*/
+      /* Upon reading Black, go forward */
+      /*else if (color == 1) {
+        OnFwd(OUT_AB, 50);
+      }*/
+    /*if (color != old_color) {
+      old_color = color;
+    }
+    PlayToneEx((color * 300) + 200, 200, 4, FALSE);
+    Wait(100);*/
+  }
 }
 
 /* This function scans the surroundings of the robot.
    It takes readings of the colour of the 4 squares surrounding the
    intersection and returns an intersection variable which holds the data.
 */
+* This function scans the surroundings of the robot.
+   It takes readings of the colour of the 4 squares surrounding the
+   intersection and returns an intersection variable which holds the data.
+*/
 intersection scan_surroundings(){
+
     intersection rsense;
     ////////////////////////////////////////////////////////////////////////////
     // TO DO:
@@ -127,12 +271,63 @@ intersection scan_surroundings(){
     // in each of the NE, SE, SW, NW directions relative to the forward facing
     // direction of the robot.
     //
-    ////////////////////////////////////////////////////////////////////////////
+      ////////////////////////////////////////////////////////////////////////////
+    ColorSensorReadType csr;
+    csr.Port=IN_1;
+    SetSensorColorFull(csr.Port);
+    SysColorSensorRead(csr);
+    unsigned int rawdata[];
+    int color = Sensor(IN_1);
+    int old_color = -1;
+      
+    OnFwd(OUT_AB, 25);
+    Wait(650);
+    turn_right(35);
+    Wait(200);
+    color = Sensor(IN_1);
+    TextOut(0, 0, "color is = " + NumToStr(color) + "");
+    rsense[0] = color;
+    PlayToneEx((color * 300) + 200, 200, 4, FALSE);  // scan colour
+    Wait(200);    // placeholder value
 
-	// add code for scanning intersection
-    return rsense;
+
+    turn_left(75);  // adjusting so the robot is straight
+    Wait(200);
+    color = Sensor(IN_1);
+    rsense[3] = color;
+    TextOut(0, 0, "color is = " + NumToStr(color) + "");
+    PlayToneEx((color * 300) + 200, 200, 4, FALSE);  // scan colour
+    turn_right(35); // placeholder value
+    if(color != 4){
+      OnRev(OUT_AB, 20);
+    }
+
+    OnRev(OUT_AB, 25);
+    Wait(900);
+    turn_right(35);
+    Wait(200);
+    color = Sensor(IN_1);
+    rsense[1] = color;
+
+    TextOut(0, 0, "color is = " + NumToStr(color) + "");
+    PlayToneEx((color * 300) + 200, 200, 4, FALSE);  // scan colour
+    Wait(200);    // placeholder value
+
+    turn_left(75);  // adjusting so the robot is straight
+    Wait(200);
+    color = Sensor(IN_1);
+    rsense[2] = color;
+    TextOut(0, 0, "color is = " + NumToStr(color) + "");
+    PlayToneEx((color * 300) + 200, 200, 4, FALSE);  // scan colour
+    turn_right(45); // placeholder value
+    
+    if(color != 4){
+      OnFwd(OUT_AB, 15);
+    }
+
+
+  return rsense;
 }
-
 
 /* Given the original heading and a new heading, turns the robot to reflect
    the new heading
@@ -230,20 +425,28 @@ particle move(particle p){
 		
 	 if(p.theta == NORTH && p.x > 0){
 		p.x -= 1;
+
 	 }
-	 else if (p.theta == EAST && p.y < 3){
+	 else if (p.theta == EAST && p.y < 2){
 		p.y += 1;
-	 }
-	 else if (p.theta == SOUTH && p.x < 5){
-		p.x += 1
-	 }
-	 else if (p.theta == WEST && p.y > 0){
-		p.y -= 1;
-	 } else {
-		change_direction(p.theta, (p.theta + 180) % 360);
+
 	 }
 
-         return p;
+	 else if (p.theta == SOUTH && p.x < 4){
+		p.x += 1
+
+	 }
+
+	 else if (p.theta == WEST && p.y > 0){
+		p.y -= 1;
+
+	 } 
+   else {
+		p.theta = (p.theta + 180) % 360;
+
+	 }
+
+  return p;
 }
 
 /* This function returns data on interesection surroundings for particles.
@@ -278,7 +481,29 @@ int sense(intersection map[], int x, int y, int dir, int heading){
     ////////////////////////////////////////////////////////////////////////////
 
 
-    return -1; // you may need to remove this
+    // get the inresection based on x and y position of the particle
+    index = x*5 + y;
+
+    // since we are facing north return the original dir
+    if(heading == NORTH) {
+      return map[index].dir;
+    }
+    // since we are facing east, north gets updated so we have to calculate
+    // new dir
+    else if(heading == EAST) {
+      return map[index].((dir + 90)%360);
+    }
+    // same as above but for south
+    else if(heading = SOUTH) {
+      return map[index].((dir + 180)%360); 
+    }
+    else if(heading = WEST) {
+      return map[index].((dir + 270)%360); 
+    }
+    else {
+      return -1;
+    }
+
 }
 
 /* The main task which initializes data
