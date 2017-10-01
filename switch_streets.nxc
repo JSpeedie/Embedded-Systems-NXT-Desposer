@@ -242,14 +242,15 @@ sub FindRoad() {
 		/* If searching to the right was NOT successful, search to the left */
 		if (color == -1) {
 			color = find_road_left();
-			if (color != -1) {
-				PlayToneEx((color * 300) + 200, 200, 4, FALSE);
+			/* If it found a road or intersection, exit the loop */
+			if (color == 4 || color == 1) {
 				break;
 			}
-		} else {
-			PlayToneEx((color * 300) + 200, 200, 4, FALSE);
+		/* If it found a road or intersection, exit the loop */
+		} else if (color == 4 || color == 1) {
 			break;
 		}
+
 		/* If searching left and right wasn't successful, move forward and try
 		 * again */
 		OnFwd(OUT_AB, 20);
