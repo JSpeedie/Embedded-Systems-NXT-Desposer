@@ -474,26 +474,27 @@ int sense(intersection map[], int x, int y, int dir, int heading){
 
     // since we are facing north return the original dir
     if(heading == NORTH) {
-      return map[index].dir;
-    }
-    // since we are facing east, north gets updated so we have to calculate
-    // new dir
-    else if(heading == EAST) {
-      dir = (dir + 90)%360);
-      return map[index].dir;
-    }
-    // same as above but for south
-    else if(heading = SOUTH) {
-      dir = (dir + 180)%360);
-      return map[index].dir; 
-    }
-
-    else if(heading = WEST) {
-      dir = (dir + 270)%360);
-      return map[index].dir; 
-    }
-    else {
-      return -1;
+		if (dir == NORTHEAST) { return map[index].NE; };
+		if (dir == NORTHWEST) { return map[index].NW; };
+		if (dir == SOUTHEAST) { return map[index].SE; };
+		if (dir == SOUTHWEST) { return map[index].SW; };
+    } else if (heading == EAST) {
+		if (((dir + 90) % 360) == NORTHEAST) { return map[index].NE; };
+		if (((dir + 90) % 360) == NORTHWEST) { return map[index].NW; };
+		if (((dir + 90) % 360) == SOUTHEAST) { return map[index].SE; };
+		if (((dir + 90) % 360) == SOUTHWEST) { return map[index].SW; };
+    } else if(heading = SOUTH) {
+		if (((dir + 180) % 360) == NORTHEAST) { return map[index].NE; };
+		if (((dir + 180) % 360) == NORTHWEST) { return map[index].NW; };
+		if (((dir + 180) % 360) == SOUTHEAST) { return map[index].SE; };
+		if (((dir + 180) % 360) == SOUTHWEST) { return map[index].SW; };
+    } else if(heading = WEST) {
+		if (((dir + 270) % 360) == NORTHEAST) { return map[index].NE; };
+		if (((dir + 270) % 360) == NORTHWEST) { return map[index].NW; };
+		if (((dir + 270) % 360) == SOUTHEAST) { return map[index].SE; };
+		if (((dir + 270) % 360) == SOUTHWEST) { return map[index].SW; };
+    } else {
+	return -1;
     }
 
 }
@@ -668,27 +669,40 @@ task main(){
      //    - move the robot and the particles forward to the next intersection
      //
      /////////////////////////////////////////////////////////////////////////////
-     int dirList = [NE, NW, SE, SW];
+     int dirList[] = {NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST};
+	int listLen = ArrayLen(list);
      while (robp < THRESHOLD){ /* run the update loop until an acceptable
                                  probability is obtained */
-      // get the colors from each intersection for the robot into an array
-      rsense = scan_surroundings();
-  	  listLen = ArrayLen(list);
+	// get the colors from each intersection for the robot into an array
+	rsense = scan_surroundings();
     
       // go over each particle in the list
-      for(j = 0; j < listLen; j++) {
+      for(int j = 0; j < listLen; j++) {
 
-        for(i = 0; i < 4; i++) {
+        for (int i = 0; i < 4; i++) {
           // assign color from the particle sense
           int color = sense(map, list[i].x, list[i].y, dirList[i], list[i].theta);
           psense[i] = color;
+	}
 
           // check the colors from the robot position with the colors from the particle
           // position
-          if(psense[i] == rsense[i]) {
+	// TODO: change this to not be magical numbers ya chimp
+          if (psense[0] == rsense.NE) {
             // increase weight for the particle
             list[j].prob /= MATCH;
-
+          }
+          if (psense[1] == rsense.SE) {
+            // increase weight for the particle
+            list[j].prob /= MATCH;
+          }
+          if (psense[2] == rsense.SW) {
+            // increase weight for the particle
+            list[j].prob /= MATCH;
+          }
+          if (psense[3] == rsense.NW) {
+            // increase weight for the particle
+            list[j].prob /= MATCH;
           }
           else {
             // decrease the weight of that particle
@@ -706,10 +720,9 @@ task main(){
       // move the robot after completing an intersection
       move_robot();
       // move all particles after completing an intersection
-      for(k = 0; k < listLen; k++) {
+      for (int k = 0; k < listLen; k++) {
         move(list[k]);
       }
-    }
 
 
   	 //  for(int i = 0; i < listLen; i++){
