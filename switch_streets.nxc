@@ -173,14 +173,15 @@ int find_road_left() {
 	int search_time = 1500;
 
 	/* Start turning the robot right */
-	OnFwd(OUT_B, 10);
-	OnRev(OUT_A, 10);
+	OnFwd(OUT_B, 20);
+	OnRev(OUT_A, 20);
 	/* As long as the colour being scanned is not representative of a road and
 	 * it hasn't been too long */
 	while ((color != 4 || color != 1) && measurements < search_time) {
 		Wait(1);
 		measurements++;
 		color = Sensor(IN_1);
+		PlayToneEx((color * 300) + 200, 100, 3, FALSE);
 	}
 	/* Once a road has been found or the time limit hit, stop turning. */
 	Off(OUT_AB);
@@ -204,14 +205,15 @@ int find_road_right() {
 	int search_time = 1500;
 
 	/* Start turning the robot right */
-	OnFwd(OUT_A, 10);
-	OnRev(OUT_B, 10);
+	OnFwd(OUT_A, 20);
+	OnRev(OUT_B, 20);
 	/* As long as the colour being scanned is not representative of a road and
 	 * it hasn't been too long */
 	while ((color != 4 || color != 1) && measurements < search_time) {
 		Wait(1);
 		measurements++;
 		color = Sensor(IN_1);
+		PlayToneEx((color * 300) + 200, 100, 3, FALSE);
 	}
 	/* Once a road has been found or the time limit hit, stop turning. */
 	Off(OUT_AB);
