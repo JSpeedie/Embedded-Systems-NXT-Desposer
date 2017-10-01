@@ -237,9 +237,11 @@ sub FindRoad() {
 	 * yellow or black (the intersection and road colors) */
 	while (color != 4 || color != 1) {
 		color = find_road_right();
+		Off(OUT_AB);
 		/* If searching to the right was not successful, search to the left */
 		if (color == -1) {
 			color = find_road_left();
+			Off(OUT_AB);
 			/* If searching to the left WAS successful */
 			if (color != -1) {
 				break;
@@ -259,6 +261,7 @@ sub FindRoad() {
 			turn_right(180);
 		}
 	}
+	Off(OUT_AB);
 }
 
 /* Subroutine which moves the robot forward from one intersection to the next
