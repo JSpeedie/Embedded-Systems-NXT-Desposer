@@ -387,6 +387,12 @@ int move_to(int s, int f, int h){
     //
     ////////////////////////////////////////////////////////////////////////////
 
+    for(int i = 0; i < tx; i++){
+	for(int j = 0; j < ty; j++){
+		change_direction(heading, heading);
+	change_direction(heading, heading + 90);
+    }
+
 
     return heading;
 }
