@@ -280,7 +280,7 @@ intersection scan_surroundings(){
     Wait(200);// placeholder value
 
 
-    turn_left(75);  // adjusting so the robot is straight
+    turn_left(30);  // adjusting so the robot is straight
     Wait(200);
     color = Sensor(IN_1);
     rsense.NW = color;
@@ -293,7 +293,7 @@ intersection scan_surroundings(){
 
     OnRev(OUT_AB, 25);
     Wait(900);
-    turn_right(35);
+    turn_right(30);
     Wait(200);
     color = Sensor(IN_1);
     rsense.SE = color;
