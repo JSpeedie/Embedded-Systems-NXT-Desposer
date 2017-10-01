@@ -181,7 +181,8 @@ int find_road_left() {
 		Wait(1);
 		measurements++;
 		color = Sensor(IN_1);
-		PlayToneEx((color * 300) + 200, 100, 3, FALSE);
+		PlayToneEx((color * 300) + 200, 100, 1, FALSE);
+		TextOut(0, 0, "color = " + NumToStr(color) + "");
 	}
 	/* Once a road has been found or the time limit hit, stop turning. */
 	Off(OUT_AB);
@@ -213,7 +214,8 @@ int find_road_right() {
 		Wait(1);
 		measurements++;
 		color = Sensor(IN_1);
-		PlayToneEx((color * 300) + 200, 100, 3, FALSE);
+		PlayToneEx((color * 300) + 200, 100, 1, FALSE);
+		TextOut(0, 0, "color = " + NumToStr(color) + "");
 	}
 	/* Once a road has been found or the time limit hit, stop turning. */
 	Off(OUT_AB);
