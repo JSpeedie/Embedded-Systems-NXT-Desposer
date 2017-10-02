@@ -337,7 +337,7 @@ sub change_direction(int orig, int new){
     switch (change){
            case 3:
            case -1:(90);
-                turn_left
+                turn_left(90);
                 //turn left 90 degrees
                 /* code solution here */
                 break;
@@ -396,7 +396,6 @@ int move_to(int s, int f, int h){
         change_direction(heading, heading);
         change_direction(heading, heading + 90);
     }
-
 
     return heading;
 }
