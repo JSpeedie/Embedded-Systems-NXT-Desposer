@@ -304,9 +304,7 @@ intersection scan_surroundings(){
     TextOut(0, 0, "color is = " + NumToStr(color) + "");
     PlayToneEx((color * 300) + 200, 200, 4, FALSE);  // scan colour
     Wait(200);    // placeholder value
-
-    turn_left(75);  // adjusting so the robot is straight
-    Wait(200);
+    
     color = Sensor(IN_1);
     rsense.SW = color;
     TextOut(0, 0, "color is = " + NumToStr(color) + "");
@@ -687,7 +685,6 @@ task main(){
     
       // go over each particle in the list
       for(int j = 0; j < listLen; j++) {
-
         for (int i = 0; i < 4; i++) {
           // assign color from the particle sense
           int color = sense(map, list[i].x, list[i].y, dirList[i], list[i].theta);
