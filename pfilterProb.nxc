@@ -336,17 +336,20 @@ sub change_direction(int orig, int new){
     /* selects the appropriate turn based on the headings given*/
     switch (change){
            case 3:
-           case -1:
+           case -1:(90);
+                turn_left
                 //turn left 90 degrees
                 /* code solution here */
                 break;
            case -3:
            case 1:
+                turn_right(90);
                 //turn right 90 degrees
                 /* code solution here */
                 break;
            case 2:
-	   case -2:		
+	         case -2:		
+                turn_right(180);
                 // 180 degree turn
                 /* code solution here */
                 break;
