@@ -247,6 +247,9 @@ sub move_robot(){
     if (color != 1 || color != 4) {
       FindRoad();
     }
+	if(color == 4){
+		Off(OUT_AB);
+	}
   }
 }
 
@@ -676,7 +679,7 @@ task main(){
      //
      /////////////////////////////////////////////////////////////////////////////
      int dirList[] = {NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST};
-	int listLen = ArrayLen(list);
+	 int listLen = ArrayLen(list);
      while (robp < THRESHOLD){ /* run the update loop until an acceptable
                                  probability is obtained */
 	// get the colors from each intersection for the robot into an array
@@ -720,6 +723,8 @@ task main(){
             guess[1] = list[j].y;
             guess[2] = list[j].theta;
           }
+		  ClearScreen()
+		  TextOut(0, 24, robp);
         } 
       }
 
@@ -729,13 +734,6 @@ task main(){
       for (int k = 0; k < listLen; k++) {
         move(list[k]);
       }
-
-
-  	 //  for(int i = 0; i < listLen; i++){
-  		// list[i].sense(map, list[i].x, list[i].y, ,list[i].theta
-  	 //  }
-  	  
-    //  }
      PlayToneEx(Random(1000) + 200, 400, 3, FALSE);
      
      /* When we are fairly confident about the robot's position, we can move on
