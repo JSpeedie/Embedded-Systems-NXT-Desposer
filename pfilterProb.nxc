@@ -66,26 +66,25 @@
 	 robot's surroundings.
 	 */
 struct particle {
-			 int x;
-			 int y;
-			 int theta;
-			 float prob; /* weight of a particle representing probability */
+	 int x;
+	 int y;
+	 int theta;
+	 float prob; /* weight of a particle representing probability */
 };
 
 /* Represents an interesection (yellow square) on the grid.
 
 	 Holds data on the surroundings of the intersection, namely coloured(or white)
 	 squares to the NE, SE, SW, NW of the interesection.
-	 
+
 	 Note that the directions are by default in terms of compass directions.
 	 When given a heading, the directions will change relative to the heading.
 	 */
 struct intersection{
-
-			 int NE;
-			 int SE;
-			 int SW;
-			 int NW;
+	 int NE;
+	 int SE;
+	 int SW;
+	 int NW;
 };
 
 /* function prototypes, to be added if needed
@@ -349,7 +348,6 @@ intersection scan_surroundings(){
 	SysColorSensorRead(csr);
 	unsigned int rawdata[];
 	int color = Sensor(IN_1);
-	int old_color = -1;
 
 	/* Move forward to scan northern corners */
 	move_forwards(35);
@@ -404,7 +402,7 @@ sub change_direction(int orig, int new){
 								/* code solution here */
 								break;
 					 case 2:
-					 case -2:		
+					 case -2:
 								turn_right(180);
 								// 180 degree turn
 								/* code solution here */
@@ -731,6 +729,7 @@ task main(){
 	int dirList[] = {NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST};
 	int listLen = ArrayLen(list);
 	rsense = scan_surroundings();
+	TextOut(0, 32, NumToStr(rsense.NE) + " " + NumToStr(rsense.NW) + " " + NumToStr(rsense.SE) + " " + NumToStr(rsense.SW));
 	while (robp < THRESHOLD) {
 		move_robot();
 
