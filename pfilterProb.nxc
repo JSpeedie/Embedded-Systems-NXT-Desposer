@@ -95,17 +95,17 @@ struct intersection{
 
 sub turn_right(int angle) {
 	Off(OUT_AB);
-	OnRev(OUT_A, 25);
-	OnFwd(OUT_B, 25);
-	Wait(23 * angle);
+	OnRev(OUT_A, 50);
+	OnFwd(OUT_B, 50);
+	Wait(11 * angle);
 	Off(OUT_AB);
 }
 
 sub turn_left(int angle) {
 	Off(OUT_AB);
-	OnRev(OUT_B, 25);
-	OnFwd(OUT_A, 25);
-	Wait(23 * angle);
+	OnRev(OUT_B, 50);
+	OnFwd(OUT_A, 50);
+	Wait(11 * angle);
 	Off(OUT_AB);
 }
 
@@ -115,6 +115,50 @@ sub move_forwards(int power) {
 
 sub move_backwards(int power) {
 	OnFwd(OUT_AB, power);
+}
+
+int scan_to_yellow(int direction) {
+	int color = Sensor(IN_1);
+
+	// if we scan left
+	if(direction == 0) {
+		/* Start turning the robot left */
+		OnRev(OUT_A, 50);
+		OnFwd(OUT_B, 50);
+		/* As long as the colour being scanned is NOT representative of a road */
+		while (color != 4 && color != 1) {
+			Wait(1);
+			color = Sensor(IN_1);
+		}
+		/* Once a building has been found, stop turning. */
+		Off(OUT_AB);
+		return color;
+	} else if(direction == 1) {
+		/* Start turning the robot right */
+		OnRev(OUT_B, 50);
+		OnFwd(OUT_A, 50);
+		/* As long as the colour being scanned is NOT representative of a road */
+		while (color != 4 && color != 1) {
+			Wait(1);
+			color = Sensor(IN_1);
+		}
+		/* Once a building has been found, stop turning. */
+		Off(OUT_AB);
+		return color;
+	} else if(direction == 2) {
+		/* Start moving the robot forwards */
+		move_forwards(50);
+		/* As long as the colour being scanned is NOT representative of a intersection */
+		while (color != 4) {
+			Wait(1);
+			color = Sensor(IN_1);
+		}
+		/* Once a road has been found, stop moving. */
+		Off(OUT_AB);
+		return color;
+	}
+
+	return color;
 }
 
 int scan_to_black(int direction) {
@@ -145,6 +189,17 @@ int scan_to_black(int direction) {
 		/* Once a building has been found, stop turning. */
 		Off(OUT_AB);
 		return color;
+	} else if(direction == 2) {
+		/* Start moving the robot forwards */
+		move_forwards(50);
+		/* As long as the colour being scanned is NOT representative of a road */
+		while (color != 1) {
+			Wait(1);
+			color = Sensor(IN_1);
+		}
+		/* Once a road has been found, stop moving. */
+		Off(OUT_AB);
+		return color;
 	}
 
 	return color;
@@ -152,14 +207,13 @@ int scan_to_black(int direction) {
 
 /* Subroutine which moves the robot forward from one intersection to the next
 */
-int find_road_left() {
+int find_road_left(int search_time) {
 	ColorSensorReadType csr;
 	csr.Port=IN_1;
 	SetSensorColorFull(csr.Port);
 	SysColorSensorRead(csr);
 	int color = Sensor(IN_1);
 	int measurements = 0;
-	int search_time = 1500;
 
 	/* Start turning the robot right */
 	OnRev(OUT_B, 50);
@@ -183,14 +237,13 @@ int find_road_left() {
 	}
 }
 
-int find_road_right() {
+int find_road_right(int search_time) {
 	ColorSensorReadType csr;
 	csr.Port=IN_1;
 	SetSensorColorFull(csr.Port);
 	SysColorSensorRead(csr);
 	int color = Sensor(IN_1);
 	int measurements = 0;
-	int search_time = 1500;
 
 	/* Start turning the robot right */
 	OnRev(OUT_A, 50);
@@ -201,6 +254,7 @@ int find_road_right() {
 		Wait(1);
 		measurements++;
 		color = Sensor(IN_1);
+		PlayToneEx((color * 200) + 200, 400, 2, FALSE);
 	}
 	/* Once a road has been found or the time limit hit, stop turning. */
 	Off(OUT_AB);
@@ -210,6 +264,7 @@ int find_road_right() {
 		return -1;
 	/* If the road was found, return the color */
 	} else {
+		TextOut(0, 24, "found a road");
 		return color;
 	}
 }
@@ -225,10 +280,10 @@ sub FindRoad() {
 	/* While the left scanned color and the right scanned color are not
 	 * yellow or black (the intersection and road colors) */
 	while (color != 4 || color != 1) {
-		color = find_road_right();
+		color = find_road_right(1500);
 		/* If searching to the right was not successful, search to the left */
 		if (color == -1) {
-			color = find_road_left();
+			color = find_road_left(1500);
 			/* If searching to the left WAS successful */
 			if (color != -1) {
 				break;
@@ -250,6 +305,96 @@ sub FindRoad() {
 	}
 }
 
+sub move_for_ticks(int direction, int ticks) {
+
+	/* If the direction is left */
+	if (direction == 0) {
+		/* Start turning the robot left */
+		OnRev(OUT_B, 50);
+		OnFwd(OUT_A, 50);
+		Wait(ticks);
+		Off(OUT_AB);
+	}
+	/* If the direction is right */
+	if (direction == 1) {
+		/* Start turning the robot right */
+		OnRev(OUT_A, 50);
+		OnFwd(OUT_B, 50);
+		Wait(ticks);
+		Off(OUT_AB);
+	}
+}
+
+int count_road_width(int direction) {
+	int color = Sensor(IN_1);
+	int ret = 0;
+
+	/* If we scan left */
+	if(direction == 0) {
+		/* Start turning the robot left */
+		OnRev(OUT_A, 50);
+		OnFwd(OUT_B, 50);
+		/* As long as the colour being scanned is representative of a road */
+		while (color == 1) {
+			Wait(1);
+			ret++;
+			color = Sensor(IN_1);
+		}
+		/* Once a non-road has been found */
+		Off(OUT_AB);
+		return ret;
+	} else if(direction == 1) {
+		/* Start turning the robot right */
+		OnRev(OUT_B, 50);
+		OnFwd(OUT_A, 50);
+		/* As long as the colour being scanned is representative of a road */
+		while (color == 1) {
+			Wait(1);
+			ret++;
+			color = Sensor(IN_1);
+		}
+		/* Once a non-road has been found */
+		Off(OUT_AB);
+		return ret;
+	}
+
+	return ret;
+}
+
+sub GetOnRoad() {
+	int search_time = 200;
+	int success_dir = -1;
+	int ret = -1;
+
+	/* While a road has not been found */
+	while (ret != 1) {
+		/* If searching to the right did not find a road */
+		if (-1 == (ret = find_road_right(search_time))) {
+			/* If searching to the left did not find a road */
+			if (-1 == (ret = find_road_left(search_time * 2))) {
+				/* Reset to original position and increase search span */
+				ret = find_road_right(search_time);
+				search_time *= 1.25;
+			} else if (ret == 1) {
+				TextOut(0, 48, "GetOnRoad found");
+				/* The turning direction that found the road was left == 0 */
+				success_dir = 0;
+				break;
+			}
+		} else if (ret == 1) {
+			TextOut(0, 48, "GetOnRoad found");
+			/* The turning direction that found the road was right == 1 */
+			success_dir = 1;
+			break;
+		}
+	}
+
+	/* Once it has found a road, scan in the successful direction until it
+	 * is off the road, counting how many 'ticks' crossing that road took */
+	int ticks = count_road_width(success_dir);
+	move_for_ticks(success_dir, ticks/2);
+
+}
 
 /* Subroutine which moves the robot forward from one intersection to the next
 */
@@ -280,13 +425,17 @@ sub move_robot(){
 	TextOut(0, 24, "Blk:1 Blu:2 Gr:3");
 	TextOut(0, 16, "Yel:4 Red:5 Wh:6");
 
-	while(1) {
-		color	= Sensor(IN_1);
-		if(color == 1 && color != 4) {
-			OnRev(OUT_AB, 25);
-		}
-		if(color == 4){
+	move_forwards(50);
+	/* While the robot is not on yellow */
+	while(color != 4) {
+		color = Sensor(IN_1);
+		/* If the robot hits red */
+		if (color == 5) {
 			Off(OUT_AB);
+			turn_right(180);
+		/* If the robot finds itself off a road */
+		} else if (color != 1) {
+			//GetOnRoad();
 		}
 	}
 }
@@ -350,7 +499,7 @@ intersection scan_surroundings(){
 	int color = Sensor(IN_1);
 
 	/* Move forward to scan northern corners */
-	move_forwards(35);
+	move_forwards(50);
 	Wait(250);
 	/* Scan 2 northern corners */
 	rsense.NE = scan_corners(1);
@@ -358,17 +507,18 @@ intersection scan_surroundings(){
 	rsense.NW = scan_corners(0);
 	scan_to_black(1);
 	/* Move backwards to scan the southern corners */
-	move_backwards(35);
-	Wait(600);
+	move_backwards(50);
+	Wait(500);
 	Off(OUT_AB);
 	/* Scan 2 southern corners */
 	rsense.SE = scan_corners(1);
 	scan_to_black(0);
 	rsense.SW = scan_corners(0);
 	scan_to_black(1);
-
-	move_forwards(35);
-	Wait(350);
+	/* After fully scanning the intersection, move forwards to the intersection */
+	scan_to_yellow(2);
+	/* Then move to the road */
+	scan_to_black(2);
 
 	return rsense;
 }
@@ -379,6 +529,7 @@ intersection scan_surroundings(){
 	 This subroutine is used after the robot knows its position
 	 */
 sub change_direction(int orig, int new){
+
 		////////////////////////////////////////////////////////////////////////////
 		// TO DO:
 		//
@@ -386,27 +537,34 @@ sub change_direction(int orig, int new){
 		//
 		////////////////////////////////////////////////////////////////////////////
 
-		int change = new - orig;
-		/* selects the appropriate turn based on the headings given*/
-		switch (change){
-					 case 3:
-					 case -1:
-								turn_left(90);
-								//turn left 90 degrees
-								/* code solution here */
-								break;
-					 case -3:
-					 case 1:
-								turn_right(90);
-								//turn right 90 degrees
-								/* code solution here */
-								break;
-					 case 2:
-					 case -2:
-								turn_right(180);
-								// 180 degree turn
-								/* code solution here */
-								break;
+
+		int angle = 90;
+		if(orig == NORTH) {
+			turn_right(new);
+		} else if(orig == SOUTH) {
+			if(new == NORTH) {
+				turn_right(2*angle);
+			} else if(new == EAST) {
+				turn_left(angle);
+			} else if(new == WEST) {
+				turn_right(angle);
+			}
+		} else if(orig == WEST) {
+			if(new == NORTH) {
+				turn_right(angle);
+			} else if(new == EAST) {
+				turn_right(2*angle);
+			} else if(new == SOUTH) {
+				turn_left(angle);
+			}
+		} else if(orig == EAST) {
+			if (new == NORTH) {
+				turn_left(angle);
+			} else if(new == SOUTH) {
+				turn_right(angle);
+			} else if(new == WEST) {
+				turn_right(2*angle);
+			}
 		}
 }
 
@@ -423,36 +581,49 @@ sub change_direction(int orig, int new){
 	 This function is used after the robot knows it's own position.
 */
 int move_to(int s, int f, int h){
-		int sx, sy, fx, fy, tx, ty;
-		int heading;
-		// extract coordinates from given information
-		sx = s/GHEIGHT;
-		sy = s%GHEIGHT;
-		fx = f/GHEIGHT;
-		fy = f%GHEIGHT;
-		
-		/* calculate how far to go in manhatten distances */
-		tx = fx - sx;
-		ty = fy - sy;
-		heading = h;
+    int sx, sy, fx, fy, tx, ty;
+    int heading;
+    // extract coordinates from given information
+    sx = s/GHEIGHT;
+    sy = s%GHEIGHT;
+    fx = f/GHEIGHT;
+    fy = f%GHEIGHT;
+    
+    /* calculate how far to go in manhatten distances */
+    tx = fx - sx;
+    ty = fy - sy;
+    heading = h;
 
-		///////////////////////////////////////////////////////////////////////////
-		// TO DO:
-		//
-		// Move the robot from the starting point described by (sx, sy) to (fx, fy)
-		// Be sure to keep track of the direction the robot is facing when it
-		// makes turns.
-		//
-		////////////////////////////////////////////////////////////////////////////
+    if(heading != NORTH) {
+      change_direction(heading, NORTH);
+    }
 
-		for(int i = 0; i < tx; i++){
-			for(int j = 0; j < ty; j++){
-					change_direction(heading, heading);
-					change_direction(heading, heading + 90);
-	}
-		}
+    for(int i = 0; i < abs(tx); i++) {
+      move_robot();
+    }
 
-		return heading;
+    // if we are not in the first column change direction to west
+    if(sx != 0) {
+      change_direction(heading, WEST );  
+    }
+
+    for(int j = 0; j < abs(ty); j++) {
+      move_robot();
+    }
+    
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    // TO DO:
+    //
+    // Move the robot from the starting point described by (sx, sy) to (fx, fy)
+    // Be sure to keep track of the direction the robot is facing when it
+    // makes turns.
+    //
+    ////////////////////////////////////////////////////////////////////////////
+
+
+    return heading;
 }
 
 /* This function takes a particle and returns an updated particle after moving
@@ -563,7 +734,7 @@ task main(){
 
 		 /* variable declarations */
 		 intersection map [GWIDTH *GHEIGHT]; /* holds map data */
-		 
+
 		 int guess[3]; /* holds x y and theta of the best guess at robot's position */
 		 float robp = 0.0; /* holds the prob that the robot is at guess */
 					 /* note initializing to just '0' can cause the brick to freeze! */
@@ -576,12 +747,12 @@ task main(){
 		 int hits, misses; /* keeps track of how many of a particle's
 													surroundings match the robot's */
 		 float maxprob, totalprob;
-		 
+
 		 byte fd, charat;				 /* variables for file descriptors and characters */
 		 string line;
 		 int target, dest; /* records the target and destination coordinates for use
 													after finding the robot's position */
-		 
+
 		 /* sensor initialization */
 		 SetSensorColorFull(IN_1);
 
@@ -728,16 +899,17 @@ task main(){
 		 /////////////////////////////////////////////////////////////////////////////
 	int dirList[] = {NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST};
 	int listLen = ArrayLen(list);
-	rsense = scan_surroundings();
 	TextOut(0, 32, NumToStr(rsense.NE) + " " + NumToStr(rsense.NW) + " " + NumToStr(rsense.SE) + " " + NumToStr(rsense.SW));
 	while (robp < THRESHOLD) {
 		move_robot();
-
+		rsense = scan_surroundings();
+		
 		// go over each particle in the list
 		for(int j = 0; j < listLen; j++) {
+			int counter = 0;
 			for (int i = 0; i < 4; i++) {
 				// assign color from the particle sense
-				int color = sense(map, list[i].x, list[i].y, dirList[i], list[i].theta);
+				int color = sense(map, list[j].x, list[j].y, dirList[i], list[j].theta);
 				psense[i] = color;
 			}
 
@@ -746,33 +918,45 @@ task main(){
 			// TODO: change this to not be magical numbers ya chimp
 			if (psense[0] == rsense.NE) {
 				// increase weight for the particle
-				list[j].prob /= MATCH;
+				//list[j].prob /= MATCH;
+				counter += 1;
 			}
 			if (psense[1] == rsense.SE) {
 				// increase weight for the particle
-				list[j].prob /= MATCH;
+				// list[j].prob /= MATCH;
+				counter += 1;
 			}
 			if (psense[2] == rsense.SW) {
 				// increase weight for the particle
-				list[j].prob /= MATCH;
+				// list[j].prob /= MATCH;
+				counter += 1;
 			}
 			if (psense[3] == rsense.NW) {
 				// increase weight for the particle
-				list[j].prob /= MATCH;
+				// list[j].prob /= MATCH;
+				counter += 1;
 			}
 			else {
 				// decrease the weight of that particle
-				list[j].prob /= MISMATCH;
+				// list[j].prob /= MISMATCH;
+				counter -= 1;
 			}
+
+			if(counter == -1) {
+				list[j].prob *= MISMATCH;
+			} else {
+				list[j].prob /= ((counter/4) * MATCH);
+			}
+
 			if(robp < list[j].prob) {
 				robp = list[j].prob;
 				guess[0] = list[j].x;
 				guess[1] = list[j].y;
 				guess[2] = list[j].theta;
 			}
-			ClearScreen();
+			ClearScreen()
 			TextOut(0, 24, NumToStr(robp));
-		}
+		} 
 	}
 
 	// move all particles after completing an intersection
