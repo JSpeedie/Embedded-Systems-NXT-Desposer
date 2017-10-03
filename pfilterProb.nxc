@@ -275,32 +275,44 @@ sub move_robot(){
 
 int scan_corners(int direction){
 
-  ColorSensorReadType csr;
-  csr.Port=IN_1;
-  SetSensorColorFull(csr.Port);
-  SysColorSensorRead(csr);
-  unsigned int rawdata[];
-  int color = Sensor(IN_1);
-  int old_color = -1;
+	ColorSensorReadType csr;
+	csr.Port=IN_1;
+	SetSensorColorFull(csr.Port);
+	SysColorSensorRead(csr);
+	unsigned int rawdata[];
+	int color = Sensor(IN_1);
+	int old_color = -1;
 
-  // if we scan left
-  if(direction == 0) {
-    while(color != 1 && color != 4) {
-      turn_left(35);
-      color = Sensor(IN_1);
-      return color;
-    }
-    turn_right(35);
+	// if we scan left
+	if(direction == 0) {
+		/* Start turning the robot left */
+		OnRev(OUT_A, 50);
+		OnFwd(OUT_B, 50);
+		/* As long as the colour being scanned is representative of a road */
+		while (color == 4 || color == 1) {
+		  Wait(1);
+		  color = Sensor(IN_1);
+		}
+		/* Once a building has been found, stop turning. */
+		Off(OUT_AB);
+		return color;
+	} else if(direction == 1) {
+		/* Start turning the robot right */
+		OnRev(OUT_B, 50);
+		OnFwd(OUT_A, 50);
+		/* As long as the colour being scanned is representative of a road */
+		while (color == 4 || color == 1) {
+		  Wait(1);
+		  color = Sensor(IN_1);
+		}
+		/* Once a building has been found, stop turning. */
+		Off(OUT_AB);
+		return color;
+	}
 
-  } else if(direction == 1) {
-    while(color !=1 && color != 4) {
-      turn_right(35);
-      color = Sensor(IN_1);
-      return color;
-    }
-
-  return color;
+	return color;
 }
+
 intersection scan_surroundings(){
 
     intersection rsense;
@@ -345,50 +357,6 @@ intersection scan_surroundings(){
     Wait(1000);
 
       
-    // OnRev(OUT_AB, 25);
-    // Wait(650);
-    // turn_right(35);
-    // Wait(200);
-    // color = Sensor(IN_1);
-    // TextOut(0, 0, "color is = " + NumToStr(color) + "");
-    // rsense.NE = color;
-    // PlayToneEx((color * 300) + 200, 200, 4, FALSE);  // scan colour
-    // Wait(200);// placeholder value
-
-
-    // turn_left(30);  // adjusting so the robot is straight
-    // Wait(200);
-    // color = Sensor(IN_1);
-    // rsense.NW = color;
-    // TextOut(0, 0, "color is = " + NumToStr(color) + "");
-    // PlayToneEx((color * 300) + 200, 200, 4, FALSE);  // scan colour
-    // turn_right(35); // placeholder value
-    // if(color != 4) {
-    //   OnFwd(OUT_AB, 20);
-    // }
-
-    // OnFwd(OUT_AB, 25);
-    // Wait(900);
-    // turn_right(30);
-    // Wait(200);
-    // color = Sensor(IN_1);
-    // rsense.SE = color;
-
-    // TextOut(0, 0, "color is = " + NumToStr(color) + "");
-    // PlayToneEx((color * 300) + 200, 200, 4, FALSE);  // scan colour
-    // Wait(200);    // placeholder value
-    
-    // color = Sensor(IN_1);
-    // rsense.SW = color;
-    // TextOut(0, 0, "color is = " + NumToStr(color) + "");
-    // PlayToneEx((color * 300) + 200, 200, 4, FALSE);  // scan colour
-    // turn_right(45); // placeholder value
-    
-    // if(color != 4){
-    //   OnRev(OUT_AB, 15);
-    // }
-
-
   return rsense;
 }
 
@@ -466,8 +434,9 @@ int move_to(int s, int f, int h){
 
     for(int i = 0; i < tx; i++){
       for(int j = 0; j < ty; j++){
-        change_direction(heading, heading);
-        change_direction(heading, heading + 90);
+        	change_direction(heading, heading);
+        	change_direction(heading, heading + 90);
+	}
     }
 
     return heading;
@@ -792,8 +761,6 @@ task main(){
         } 
       }
 
-      // move the robot after completing an intersection
-      move_robot();
       // move all particles after completing an intersection
       for (int k = 0; k < listLen; k++) {
         move(list[k]);
