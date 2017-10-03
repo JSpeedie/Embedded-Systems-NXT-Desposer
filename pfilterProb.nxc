@@ -110,6 +110,45 @@ sub turn_left(int angle) {
   Off(OUT_AB);
 }
 
+sub move_forwards(int power) {
+	OnRev(OUT_AB, power);
+}
+
+sub move_backwards(int power) {
+	OnFwd(OUT_AB, power);
+}
+
+int scan_to_black(int direction) {
+	// if we scan left
+	if(direction == 0) {
+		/* Start turning the robot left */
+		OnRev(OUT_A, 50);
+		OnFwd(OUT_B, 50);
+		/* As long as the colour being scanned is NOT representative of a road */
+		while (color != 4 && color != 1) {
+		  Wait(1);
+		  color = Sensor(IN_1);
+		}
+		/* Once a building has been found, stop turning. */
+		Off(OUT_AB);
+		return color;
+	} else if(direction == 1) {
+		/* Start turning the robot right */
+		OnRev(OUT_B, 50);
+		OnFwd(OUT_A, 50);
+		/* As long as the colour being scanned is NOT representative of a road */
+		while (color != 4 && color != 1) {
+		  Wait(1);
+		  color = Sensor(IN_1);
+		}
+		/* Once a building has been found, stop turning. */
+		Off(OUT_AB);
+		return color;
+	}
+
+	return color;
+}
+
 /* Subroutine which moves the robot forward from one intersection to the next
 */
 int find_road_left() {
