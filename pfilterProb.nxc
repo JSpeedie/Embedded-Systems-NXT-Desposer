@@ -240,9 +240,16 @@ sub move_robot(){
   TextOut(0, 24, "Blk:1 Blu:2 Gr:3");
   TextOut(0, 16, "Yel:4 Red:5 Wh:6");
 
-  while(color == 1 && color != 4) {
-    OnFwd(OUT_AB, 25);
+  while(1) {
+    color  = Sensor(IN_1);
+    if(color == 1 && color != 4) {
+      OnRev(OUT_AB, 25);
+    }
+    if(color == 4){
+      Off(OUT_AB);
   }
+
+
   // TODO: remove: move forward at all times
  //  OnRev(OUT_AB, 50);
  //  while (1) {
@@ -282,7 +289,7 @@ int scan_corners(int direction){
       turn_left(35);
       color = Sensor(IN_1);
       return color;
-      }
+    }
     turn_right(35);
 
   } else if(direction == 1) {
@@ -489,25 +496,18 @@ particle move(particle p){
 		
 	 if(p.theta == NORTH && p.x > 0){
 		p.x -= 1;
-
 	 }
 	 else if(p.theta == EAST && p.y < 2){
 		p.y += 1;
-
 	 }
-
 	 else if(p.theta == SOUTH && p.x < 4){
 		p.x += 1;
-
 	 }
-
 	 else if(p.theta == WEST && p.y > 0){
 		p.y -= 1;
-
 	 } 
    else {
 		p.theta = (p.theta + 180) % 360;
-
 	 }
 
   return p;
@@ -746,9 +746,8 @@ task main(){
      /////////////////////////////////////////////////////////////////////////////
   int dirList[] = {NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST};
 	int listLen = ArrayLen(list);
-  while (robp < THRESHOLD){ /* run the update loop until an acceptable
-                                 probability is obtained */
-	// get the colors from each intersection for the robot into an array
+  while (robp < THRESHOLD){
+  move_robot();
 	rsense = scan_surroundings();
     
       // go over each particle in the list
