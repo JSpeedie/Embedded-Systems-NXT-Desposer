@@ -315,49 +315,38 @@ int scan_corners(int direction){
 
 intersection scan_surroundings(){
 
-    intersection rsense;
-    ColorSensorReadType csr;
-    csr.Port=IN_1;
-    SetSensorColorFull(csr.Port);
-    SysColorSensorRead(csr);
-    unsigned int rawdata[];
-    int color = Sensor(IN_1);
-    int old_color = -1;
+	intersection rsense;
+	ColorSensorReadType csr;
+	csr.Port=IN_1;
+	SetSensorColorFull(csr.Port);
+	SysColorSensorRead(csr);
+	unsigned int rawdata[];
+	int color = Sensor(IN_1);
+	int old_color = -1;
 
-    // go forward
-    OnFwd(OUT_AB, 25);
-    Wait(1000);
-    // call helper to get color at right corner and asssign color to rsense
-    rsense.NE = scan_corner(1);
-    while(color != 1) {
-      turn_left(35);
-    }
-    // call helper to get color at right corner
-    rsense.NW = scan_corner(0);
+	/* Move forward to scan northern corners */
+	move_forwards(35);
+	Wait(500);
+	/* Scan 2 northern corners */
+	rsense.NE = scan_corner(1);
+	scan_to_black(0);
+	rsense.NW = scan_corner(0);
+	scan_to_black(1);
+	/* Move backwards to scan the southern corners */
+	move_backwards(35);
+	Wait(600);
+	Off(OUT_AB);
+	/* Scan 2 southern corners */
+	rsense.SE = scan_corner(1);
+	scan_to_black(0);
+	rsense.SW = scan_corner(0);
+	scan_to_black(1);
 
-     while(color != 1) {
-      turn_right(35);
-    }
 
-    OnRev(OUT_AB, 25);
-    Wait(1000);
+	move_forwards(35);
+	Wait(1000);
 
-    rsense.SE = scan_corner(1);
-    while(color != 1) {
-      turn_left(35);
-    }
-    // call helper to get color at right corner
-    rsense.SW = scan_corner(0);
-
-     while(color != 1) {
-      turn_right(35);
-    }
-
-    OnFwd(OUT_AB, 25);
-    Wait(1000);
-
-      
-  return rsense;
+	return rsense;
 }
 
 /* Given the original heading and a new heading, turns the robot to reflect
