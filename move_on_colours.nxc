@@ -405,31 +405,33 @@ sub change_direction(int orig, int new){
     //
     ////////////////////////////////////////////////////////////////////////////
 
+
+    int angle = 90;
     if(orig == NORTH) {
       turn_right(new);
     } else if(orig == SOUTH) {
       if(new == NORTH) {
-        turn_right(180);
+        turn_right(2*angle);
       } else if(new == EAST) {
-        turn_left(90);
+        turn_left(angle);
       } else if(new == WEST) {
-        turn_right(90);
+        turn_right(angle);
       }
     } else if(orig == WEST) {
       if(new == NORTH) {
-        turn_right(90);
+        turn_right(angle);
       } else if(new == EAST) {
-        turn_right(180);
+        turn_right(2*angle);
       } else if(new == SOUTH) {
-        turn_left(90);
+        turn_left(angle);
       }
     } else if(orig == EAST) {
       if (new == NORTH) {
-        turn_left(90);
+        turn_left(angle);
       } else if(new == SOUTH) {
-        turn_right(90);
+        turn_right(angle);
       } else if(new == WEST) {
-        turn_right(180);
+        turn_right(2*angle);
       }
     }
 
