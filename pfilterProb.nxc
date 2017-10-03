@@ -97,7 +97,7 @@ sub turn_right(int angle) {
 	Off(OUT_AB);
 	OnRev(OUT_A, 50);
 	OnFwd(OUT_B, 50);
-	Wait(11 * angle);
+	Wait(12 * angle);
 	Off(OUT_AB);
 }
 
@@ -105,7 +105,7 @@ sub turn_left(int angle) {
 	Off(OUT_AB);
 	OnRev(OUT_B, 50);
 	OnFwd(OUT_A, 50);
-	Wait(11 * angle);
+	Wait(12 * angle);
 	Off(OUT_AB);
 }
 
@@ -264,7 +264,6 @@ int find_road_right(int search_time) {
 		return -1;
 	/* If the road was found, return the color */
 	} else {
-		TextOut(0, 24, "found a road");
 		return color;
 	}
 }
@@ -376,13 +375,11 @@ sub GetOnRoad() {
 				ret = find_road_right(search_time);
 				search_time *= 1.25;
 			} else if (ret == 1) {
-				TextOut(0, 48, "GetOnRoad found");
 				/* The turning direction that found the road was left == 0 */
 				success_dir = 0;
 				break;
 			}
 		} else if (ret == 1) {
-			TextOut(0, 48, "GetOnRoad found");
 			/* The turning direction that found the road was right == 1 */
 			success_dir = 1;
 			break;
@@ -422,8 +419,6 @@ sub move_robot(){
 	int angle;
 	int color = Sensor(IN_1);
 	int old_color = -1;
-	TextOut(0, 24, "Blk:1 Blu:2 Gr:3");
-	TextOut(0, 16, "Yel:4 Red:5 Wh:6");
 
 	move_forwards(50);
 	/* While the robot is not on yellow */
@@ -899,7 +894,6 @@ task main(){
 		 /////////////////////////////////////////////////////////////////////////////
 	int dirList[] = {NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST};
 	int listLen = ArrayLen(list);
-	TextOut(0, 32, NumToStr(rsense.NE) + " " + NumToStr(rsense.NW) + " " + NumToStr(rsense.SE) + " " + NumToStr(rsense.SW));
 	while (robp < THRESHOLD) {
 		move_robot();
 		rsense = scan_surroundings();
@@ -918,34 +912,23 @@ task main(){
 			// TODO: change this to not be magical numbers ya chimp
 			if (psense[0] == rsense.NE) {
 				// increase weight for the particle
-				//list[j].prob /= MATCH;
-				counter += 1;
+				list[j].prob /= MATCH;
 			}
 			if (psense[1] == rsense.SE) {
 				// increase weight for the particle
-				// list[j].prob /= MATCH;
-				counter += 1;
+				list[j].prob /= MATCH;
 			}
 			if (psense[2] == rsense.SW) {
 				// increase weight for the particle
-				// list[j].prob /= MATCH;
-				counter += 1;
+				list[j].prob /= MATCH;
 			}
 			if (psense[3] == rsense.NW) {
 				// increase weight for the particle
-				// list[j].prob /= MATCH;
-				counter += 1;
+				list[j].prob /= MATCH;
 			}
 			else {
 				// decrease the weight of that particle
-				// list[j].prob /= MISMATCH;
-				counter -= 1;
-			}
-
-			if(counter == -1) {
 				list[j].prob *= MISMATCH;
-			} else {
-				list[j].prob /= ((counter/4) * MATCH);
 			}
 
 			if(robp < list[j].prob) {
@@ -954,15 +937,14 @@ task main(){
 				guess[1] = list[j].y;
 				guess[2] = list[j].theta;
 			}
-			ClearScreen()
-			TextOut(0, 24, NumToStr(robp));
-		} 
+		}
+		Wait(2000);
+		// move all particles after completing an intersection
+		for (int k = 0; k < listLen; k++) {
+			move(list[k]);
+		}
 	}
 
-	// move all particles after completing an intersection
-	for (int k = 0; k < listLen; k++) {
-		move(list[k]);
-	}
 	PlayToneEx(Random(1000) + 200, 400, 3, FALSE);
 
 	/* When we are fairly confident about the robot's position, we can move on
