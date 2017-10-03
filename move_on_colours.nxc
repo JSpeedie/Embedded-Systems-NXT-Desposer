@@ -407,27 +407,53 @@ sub change_direction(int orig, int new){
 
     if(orig == NORTH) {
       turn_right(new);
-    }
-    else if(org == EAST) {
-      if(new != NORTH) {
-        int newDirection = new - 90;
-        turn_right(newDirection);  
-      } else {
+    } else if(orig == SOUTH) {
+      if(new == NORTH) {
+        turn_right(180);
+      } else if(new == EAST) {
+        turn_left(90);
+      } else if(new == WEST) {
+        turn_right(90);
+      }
+    } else if(orig == WEST) {
+      if(new == NORTH) {
+        turn_right(90);
+      } else if(new == EAST) {
+        turn_right(180);
+      } else if(new == SOUTH) {
         turn_left(90);
       }
-    }
-    else if(orig == SOUTH) {
-      if(new != EAST) {
-        int newDirection = new - 90;
-        turn_right(newDirection);
-      } else {
+    } else if(orig == EAST) {
+      if (new == NORTH) {
         turn_left(90);
+      } else if(new == SOUTH) {
+        turn_right(90);
+      } else if(new == WEST) {
+        turn_right(180);
       }
     }
-    else if(orig == WEST) {
-      if(new != SOUTH)
 
-    }
+
+    // else if(org == EAST) {
+    //   if(new != NORTH) {
+    //     int newDirection = new - 90;
+    //     turn_right(newDirection);  
+    //   } else {
+    //     turn_left(90);
+    //   }
+    // }
+    // else if(orig == SOUTH) {
+    //   if(new != EAST) {
+    //     int newDirection = new - 90;
+    //     turn_right(newDirection);
+    //   } else {
+    //     turn_left(90);
+    //   }
+    // }
+    // else if(orig == WEST) {
+    //   if(new != SOUTH)
+
+    // }
 }
 
 
@@ -759,10 +785,10 @@ task main(){
      //    - move the robot and the particles forward to the next intersection
      //
      /////////////////////////////////////////////////////////////////////////////
-  int dirList[] = {NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST};
-	int listLen = ArrayLen(list);
-  while (robp < THRESHOLD){
-  move_robot();
+    int dirList[] = {NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST};
+    int listLen = ArrayLen(list);
+    while (robp < THRESHOLD){
+    move_robot();
 	rsense = scan_surroundings();
     
       // go over each particle in the list
