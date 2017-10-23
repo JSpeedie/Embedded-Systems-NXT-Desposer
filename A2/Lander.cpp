@@ -246,45 +246,54 @@ void Lander_Control(void)
     // effect, i.e. the rotation angle does not accumulate
     // for successive calls.
 
-    /*if (Angle()>1&&Angle()<359) {
+    int init = 0;  // check if beginning of run
+    if (Angle()>1&&Angle()<359 && init == 0) { // this code fixes the intial position of the rocket, because rocket doesn't always start at 0deg
         if (Angle()>=180) Rotate(360-Angle());
         else Rotate(-Angle());
+	init = 1;
         return;
-    }*/
+    }
 
     // Module is oriented properly, check for horizontal position
     // and set thrusters appropriately.
     if (Position_X()>PLAT_X)
     {
-        // Lander is to the LEFT of the landing platform, use Right thrusters to move
-        // lander to the left.
-        Left_Thruster(0);	// Make sure we're not fighting ourselves here!
-        if (Velocity_X()>(-VXlim)) Right_Thruster((VXlim+fmin(0,Velocity_X()))/VXlim);
-        else
-        {
-            // Exceeded velocity limit, brake
-            Right_Thruster(0);
-            Left_Thruster(fabs(VXlim-Velocity_X()));
-        }
+        	// Lander is to the LEFT of the landing platform, use Right thrusters to move
+        	// lander to the left.
+        	Left_Thruster(0);	// Make sure we're not fighting ourselves here!
+        	if (Velocity_X()>(-VXlim)) Right_Thruster((VXlim+fmin(0,Velocity_X()))/VXlim);
+        	else
+        	{
+            		// Exceeded velocity limit, brake
+            		Right_Thruster(0);
+            		Left_Thruster(fabs(VXlim-Velocity_X()));
+        	}
     }
     else
     {
         // Lander is to the RIGHT of the landing platform, opposite from above
-        Right_Thruster(0);
-        if (Velocity_X()<VXlim) Left_Thruster((VXlim-fmax(0,Velocity_X()))/VXlim);
-        else
-        {
-            Left_Thruster(0);
-            Right_Thruster(fabs(VXlim-Velocity_X()));
-        }
-    }
+	if(RT_OK){
+        	Right_Thruster(0);
+        	if (Velocity_X()<VXlim) Left_Thruster((VXlim-fmax(0,Velocity_X()))/VXlim);
+        	else
+        	{
+            		Left_Thruster(0);
+           		Right_Thruster(fabs(VXlim-Velocity_X()));
+        	}
+	} else {
+		Left_Thruster(0);
+    	}
+
+	}
+    
 
     // Vertical adjustments. Basically, keep the module below the limit for
     // vertical velocity and allow for continuous descent. We trust
     // Safety_Override() to save us from crashing with the ground.
     if (Velocity_Y() < VYlim) {
-		printf("vel y = %lf\n", Velocity_Y());
-        if (MT_OK) {
+		//printf("vel y = %lf\n", Velocity_Y());
+		//printf("angle = %lf\n", Angle());
+        	if (MT_OK) {
 			Main_Thruster(1.0);
 		} else if (!MT_OK) {
 			/* If the lander is at an angle where using the left thruster
@@ -296,7 +305,8 @@ void Lander_Control(void)
 			 * would slow down its vertical momentum */
 			} else {
 				Left_Thruster(0);
-				Rotate(-90);
+				Rotate(200);
+				printf("angle = %lf\n", Angle());
 			}
 			/*Left_Thruster(1);
 			Right_Thruster(1);*/
@@ -322,16 +332,17 @@ void Lander_Control(void)
 		}*/
 
     if(!RT_OK){ // for right thruster failure
-        /*Rotate(45);
-        Left_Thruster(0.2);
-        if(Position_X() == PLAT_X){
-            Rotate(-Angle());
-            Left_Thruster(0.1);
-        } else if (Position_X() > PLAT_X){
-            Rotate(Angle() - 45);
-        } else if (Position_X() < PLAT_X){
-            Rotate(Angle() + 45);
-        }*/
+	if(Position_X() > PLAT_X){
+		Rotate(-50);
+	} else if(Position_X() < PLAT_X){
+		Rotate(50);
+	} else if(Position_X() == PLAT_X){
+		 if (Angle()>1&&Angle()<359 && init == 0) {
+	         if (Angle()>=180) Rotate(360-Angle());
+       	 	 else Rotate(-Angle());
+	    }
+
+	}
     }
     if(!LT_OK){ // for left thruster failure
        Rotate(-45);
