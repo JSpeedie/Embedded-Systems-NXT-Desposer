@@ -420,7 +420,7 @@ sub move_robot(){
 	int color = Sensor(IN_1);
 	int old_color = -1;
 
-	move_forwards(50);
+	move_forwards(25);
 	/* While the robot is not on yellow */
 	while(color != 4) {
 		color = Sensor(IN_1);
@@ -428,6 +428,7 @@ sub move_robot(){
 		if (color == 5) {
 			Off(OUT_AB);
 			turn_right(180);
+			move_forwards(50);
 		/* If the robot finds itself off a road */
 		} else if (color != 1) {
 			//GetOnRoad();
@@ -494,7 +495,7 @@ intersection scan_surroundings(){
 	int color = Sensor(IN_1);
 
 	/* Move forward to scan northern corners */
-	move_forwards(50);
+	move_forwards(30);
 	Wait(250);
 	/* Scan 2 northern corners */
 	rsense.NE = scan_corners(1);
@@ -502,7 +503,7 @@ intersection scan_surroundings(){
 	rsense.NW = scan_corners(0);
 	scan_to_black(1);
 	/* Move backwards to scan the southern corners */
-	move_backwards(50);
+	move_backwards(30);
 	Wait(500);
 	Off(OUT_AB);
 	/* Scan 2 southern corners */

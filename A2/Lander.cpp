@@ -285,32 +285,22 @@ void Lander_Control(void)
  if (Velocity_Y()<VYlim) Main_Thruster(1.0);
  else Main_Thruster(0);
 
-
- if (!MT_OK){ // for main thruster failure
-    Left_Thruster(0.5);
-    Right_Thruster(0.5);
-    if(Position_X() > PLAT_X){
-	Left_Thruster(0.1);
-	Right_Thruster(0.4);
-    } else if (Position_X() < PLAT_X){
-	Left_Thruster(0.4);
-	Right_Thruster(0.1);
-    } else if (Position_X() == PLAT_X){
-	Left_Thruster(0.1);
-	Right_Thruster(0.1);
-    }
+ if(Velocity_Y() > VYlim && !MT_OK){
+    Left_Thruster(0.1);
+    Right_Thruster(0.1);
  }
+
  if(!RT_OK){ // for right thruster failure
-    Rotate(45);
-    Left_Thruster(0.2);
-    if(Position_X() == PLAT_X){
-	Rotate(-Angle());
-	Left_Thruster(0.1);
-    } else if (Position_X() > PLAT_X){
-	Rotate(Angle() - 45);
-    } else if (Position_X() < PLAT_X){
-	Rotate(Angle() + 45);
-    }
+   Rotate(45);
+   Left_Thruster(0.2);
+   if(Position_X() == PLAT_X){
+     Rotate(-Angle());
+     Left_Thruster(0.1);
+   } else if (Position_X() > PLAT_X){
+     Rotate(Angle() - 45);
+   } else if (Position_X() < PLAT_X){
+     Rotate(Angle() + 45);
+   }
  }
  if(!LT_OK){ // for left thruster failure
     Rotate(-45);
