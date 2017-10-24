@@ -258,6 +258,7 @@ void Lander_Control(void)
     // and set thrusters appropriately.
     if (Position_X()>PLAT_X)
     {
+	if(LT_OK){
         	// Lander is to the LEFT of the landing platform, use Right thrusters to move
         	// lander to the left.
         	Left_Thruster(0);	// Make sure we're not fighting ourselves here!
@@ -268,6 +269,10 @@ void Lander_Control(void)
             		Right_Thruster(0);
             		Left_Thruster(fabs(VXlim-Velocity_X()));
         	}
+	} else {
+		Right_Thruster(0);
+		Rotate(20);
+	}
     }
     else
     {
@@ -345,12 +350,18 @@ void Lander_Control(void)
 	}
     }
     if(!LT_OK){ // for left thruster failure
-       Rotate(-45);
-       Left_Thruster(0.2);
-       if(Position_X() == PLAT_X){
-           Rotate(-Angle());
-           Left_Thruster(0.1);
-       }
+	if(Position_X() > PLAT_X){
+                Rotate(50);
+        } else if(Position_X() < PLAT_X){
+                Rotate(-50);
+        } else if(Position_X() == PLAT_X){
+                 if (Angle()>1&&Angle()<359 && init == 0) {
+                 if (Angle()>=180) Rotate(360-Angle());
+                 else Rotate(-Angle());
+            }
+
+        }
+
     }
 
 }
