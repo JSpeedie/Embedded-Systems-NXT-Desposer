@@ -241,6 +241,12 @@ sub FindRoad() {
 				TextOut(0, 24, "found one");
 				break;
 			}
+			color = find_road_left();
+			/* If it found a road or intersection, exit the loop */
+			if (color == 4 || color == 1) {
+				TextOut(0, 24, "found one");
+				break;
+			}
 		/* If it found a road or intersection, exit the loop */
 		} else if (color == 4 || color == 1) {
 			TextOut(0, 24, "found one");
@@ -250,7 +256,7 @@ sub FindRoad() {
 		/* If searching left and right wasn't successful, move forward and try
 		 * again */
 		OnFwd(OUT_AB, 20);
-		Wait(1000);
+		Wait(6000);
 		Off(OUT_AB);
 		color = Sensor(IN_1);
 		/* If after moving, it reads red, turn around */
@@ -292,9 +298,9 @@ sub move_robot(){
 		OnFwd(OUT_AB, 50);
 	while (1) {
 		color = Sensor(IN_1);
-		// TODO: remove
 		if (color != 1 && color != 4) {
 			FindRoad();
+			AlignRoad();
 		}
 		//colorRaw = ReadSensorColorRaw(IN_1, rawdata);
 		//TextOut(0, 0, "color is = " + NumToStr(color) + "");
