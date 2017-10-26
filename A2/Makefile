@@ -24,13 +24,13 @@ CCCFLAGS      = -c -g -O4
 
 # Define OpenGL and GLU library names - If the linker complains about not being
 # able to find libraries, check where they are installed in your system, and
-# add the appripriate -I and -L switches with the paths to include and lib 
+# add the appripriate -I and -L switches with the paths to include and lib
 # directories where OpenGL stuff can be found.
 GL_LIBS       = -lGLU -lGL -lglut
 
 # Define location of X Windows libraries,  and the X11 library names
-#XLIBS         = -L/usr/X11R6/lib -L/usr/lib -lX11 
-XLIBS         = -lX11 
+#XLIBS         = -L/usr/X11R6/lib -L/usr/lib -lX11
+XLIBS         = -lX11
 
 # Define the location of the destination directory for the executable file
 DEST	      = .
@@ -58,7 +58,7 @@ CPPSRCS       = Lander.cpp
 
 ##############################################################################
 # Define additional rules that make should know about in order to compile our
-# files.                                        
+# files.
 ##############################################################################
 
 # Define default rule if Make is run without arguments

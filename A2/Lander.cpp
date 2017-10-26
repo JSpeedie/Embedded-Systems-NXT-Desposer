@@ -249,41 +249,39 @@ void Lander_Control(void)
     // for successive calls.
 
 	/* x position PID controller variables */
-	int error_x = 0;
-	int error_x_integral = 0;
-	int error_x_prev = 0;
-	int k1 = 1;
-	int k2 = 1;
-	int k3 = 4;
+	double error_x = 0;
+	double error_x_integral = 0;
+	double error_x_prev = 0;
+	double k1 = 0.25;
+	double k2 = 1;
+	double k3 = 4;
 	int angle_range = 30;
 
-
+	// TODO: change this so it works if only a side thruster is available
 	if (Angle() > 0 + angle_range && Angle() < 360 - angle_range) {
         if (Angle()>=180) Rotate(360-Angle());
         else Rotate(-Angle());
         return;
 	}
 
-	error_x_prev = error_x;
+	//error_x_prev = error_x;
 	/* The error is the difference in the x position of the lander and the platform */
-	error_x = Position_X() - PLAT_X;
-	error_x_integral += error_x;
+	//error_x = Position_X() - PLAT_X;
+	//error_x_integral += error_x;
 	/* PID controller */
 	/* Get the magnitude of change that's need to be made in the x for
 	 * the lander to land safely */
-	int change = (k1 * error_x) + (k2 * error_x_integral) + (k3 * (error_x - error_x_prev));
-	printf("k1k2 + k3 = %d + %d\n",
+	/*double change = (k1 * error_x) + (k2 * error_x_integral) + (k3 * (error_x - error_x_prev));
+	printf("k1k2 + k3 = %lf + %lf\n",
 		(k1 * error_x) + (k2 * error_x_integral), (k3 * (error_x - error_x_prev)));
 	change = -1 * change;
-	// (45 * (change/1000)) = how many degrees we want the lander
-	// to rotate provided its Angle is 0 degrees
-	double degrees_to_change = 0.02 * ((double) change);
-	printf("change = %d degtc = %lf\n", change, degrees_to_change);
+	double degrees_to_change = 0.02 * change;
+	//printf("change = %lf degtc = %lf\n", change, degrees_to_change);
 	Rotate(degrees_to_change);
-	int vel = 1;
+	int vel = 1;*/
 	/* If the lander is over the platform */
-	if (PLAT_X - 25 < Position_X() && PLAT_X + 25 > Position_X()) {
-		/* If the lander is moving too fast and will crash */
+	/*if (PLAT_X - 25 < Position_X() && PLAT_X + 25 > Position_X()) {
+		// If the lander is moving too fast and will crash
 		if (Velocity_Y() < VYlim) {
 			printf("dropping too fast\n");
 			vel += 0.15;
@@ -291,28 +289,29 @@ void Lander_Control(void)
 			printf("drop the lander\n");
 			vel = 0;
 		}
-	/* If the lander is not over the platform */
+	// If the lander is not over the platform
 	} else {
-		/* Keep it at a slow descent */
+		// Keep it at a slow descent
 		if (Velocity_Y() > -1) {
 			vel -= 0.2;
 		} else {
 			vel += 0.2;
 		}
 		if (vel > 1.0) { vel == 1.0; }
-	}
+	}*/
 
 
-	/* If the main thruster is working */
+	/*
+	// If the main thruster is working
 	if (MT_OK) {
 		Main_Thruster(vel);
-	/* If the right thruster is working */
+	// If the right thruster is working
 	} else if (RT_OK) {
 		Right_Thruster(vel);
-	/* If the left thruster is working */
+	// If the left thruster is working
 	} else if (LT_OK) {
 		Left_Thruster(vel);
-	}
+	}*/
 
 	/*
     // Module is oriented properly, check for horizontal position
