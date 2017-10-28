@@ -257,11 +257,10 @@ void Lander_Control(void)
 	double k3 = 0.3;
 	int angle_range = 40;
 
-	// TODO: change this so it works if only a side thruster is available
 	if (Angle() > 0 + angle_range && Angle() < 360 - angle_range) {
-        if (Angle()>=180) Rotate(360-Angle());
-        else Rotate(-Angle());
-        return;
+		if (Angle()>=180) Rotate(360-Angle());
+		else Rotate(-Angle());
+		return;
 	}
 
 	error_x_prev = error_x;
