@@ -256,6 +256,7 @@ void Lander_Control(void)
 	double k2 = 0.004;
 	double k3 = 0.1;
 	int angle_range = 50;
+	double predict_angle = Angle();
 
 	/*if (Angle() > 0 + angle_range && Angle() < 360 - angle_range) {
 		if (Angle()>=180) Rotate(360-Angle());
@@ -319,12 +320,22 @@ void Lander_Control(void)
 	}
 
 	/* Rotate to the angle our PID says the lander should be at */
-    if (Angle() >= 180) {
-		Rotate(360-Angle() + degrees_to_change);
+	if (!predict_angle + 30 > Angle() && !predict_angle - 30 < Angle()){
+    		if (Angle() >= 180) {
+			Rotate(360-Angle() + degrees_to_change);
+			predict_angle = 360 - predict_angle + degrees_to_change;
+		} else {
+			Rotate(-Angle() + degrees_to_change);
+			predict_angle = -predict_angle + degrees_to_change;
+		}
 	} else {
-		Rotate(-Angle() + degrees_to_change);
+		if (predict_angle >= 180) {
+                        predict_angle = 360 - predict_angle + degrees_to_change;
+                } else {
+                        Rotate(-predict_angle + degrees_to_change);
+                }
 	}
-
+	printf("angle: %lf\n", predict_angle);
 	// If the main thruster is working
 	if (MT_OK) {
 		Main_Thruster(vel);
@@ -406,6 +417,7 @@ void Safety_Override(void)
     double DistLimit;
     double Vmag;
     double dmin;
+    double predict_angle = Angle();
 
     // Establish distance threshold based on lander
     // speed (we need more time to rectify direction
@@ -456,11 +468,23 @@ void Safety_Override(void)
     // what is it?
     if (dmin<DistLimit*fmax(.25,fmin(fabs(Velocity_X())/5.0,1)))
     { // Too close to a surface in the horizontal direction
-     if (Angle()>1&&Angle()<359)
-     {
-      if (Angle()>=180) Rotate(360-Angle());
-      else Rotate(-Angle());
-      return;
+     if (!predict_angle + 30 > Angle() && !predict_angle - 30 < Angle()){
+     	if (Angle()>1&&Angle()<359)
+     	{
+      	if (Angle()>=180) Rotate(360-Angle());
+      	else Rotate(-Angle());
+      	return;
+     	}
+     } else {
+	if(predict_angle > 1 && predict_angle < 359){
+		if(predict_angle >= 180){
+			Rotate(360 - predict_angle);
+			predict_angle = 360 - predict_angle;
+		} else {
+			Rotate(-predict_angle);
+			predict_angle *= -1;
+		}
+	}
      }
 
      if (Velocity_X()>0){
@@ -490,10 +514,15 @@ void Safety_Override(void)
     }
     if (dmin<DistLimit)   // Too close to a surface in the horizontal direction
     {
-     if (Angle()>1||Angle()>359)
+     if (Angle()>1||Angle()>359 || predict_angle > 1 || predict_angle > 359)
      {
-      if (Angle()>=180) Rotate(360-Angle());
-      else Rotate(-Angle());
+	if (!predict_angle + 30 > Angle() && !predict_angle - 30 < Angle()){
+      		if (Angle()>=180) Rotate(360-Angle());
+      		else Rotate(-Angle());
+	} else {
+      		if (predict_angle >= 180) Rotate(360 - predict_angle);
+      		else Rotate(-predict_angle);
+	}
       return;
      }
      if (Velocity_Y()>2.0){
