@@ -252,10 +252,10 @@ void Lander_Control(void)
 	double error_x = 0;
 	double error_x_integral = 0;
 	double error_x_prev = 0;
-	double k1 = 0.25;
-	double k2 = 0.1;
+	double k1 = 0.1;
+	double k2 = 0.02;
 	double k3 = 0.3;
-	int angle_range = 40;
+	int angle_range = 50;
 
 	if (Angle() > 0 + angle_range && Angle() < 360 - angle_range) {
 		if (Angle()>=180) Rotate(360-Angle());
@@ -275,7 +275,7 @@ void Lander_Control(void)
 		(k1 * error_x) + (k2 * error_x_integral), (k3 * (error_x - error_x_prev)));
 	change = -1 * change;
 	double degrees_to_change = change;
-	printf("change = %lf degtc = %lf\n", change, degrees_to_change);
+	printf("change = %lf degtc = %lf, dist = %lf\n", change, degrees_to_change, RangeDist());
 	Rotate(degrees_to_change);
 	int vel = 1;
 	/* If the lander is over the platform */
@@ -288,7 +288,6 @@ void Lander_Control(void)
 			printf("drop the lander\n");
 			vel = 0;
 		}
-	// If the lander is not over the platform
 	} else {
 		// Keep it at a slow descent
 		if (Velocity_Y() > -1) {
@@ -299,12 +298,28 @@ void Lander_Control(void)
 		if (vel > 1.0) { vel == 1.0; }
 	}
 
+	// If the lander isn't near the ground, make it descend
+	if (RangeDist() > 30) {
+		// If the lander is moving too fast and will crash
+		if (Velocity_Y() < VYlim) {
+			printf("dropping too fast for land\n");
+			vel += 0.15;
+		} else {
+			printf("drop the lander til land\n");
+			/* Linearly decrease the velocity of the thrusters based on distance to the ground.
+			 * This should make the lander descend faster if it's far away from the ground */
+			vel -= 0.1 * (RangeDist()/80);
+		}
+	}
+
+	/* Cap the angle the PID recommends to the angle_range */
 	if (degrees_to_change > angle_range) {
 		degrees_to_change = angle_range;
 	} else if (degrees_to_change < -angle_range) {
 		degrees_to_change = -angle_range;
 	}
 
+	/* Rotate to the angle our PID says the lander should be at */
     if (Angle() >= 180) {
 		Rotate(360-Angle() + degrees_to_change);
 	} else {
@@ -433,8 +448,7 @@ void Lander_Control(void)
 
 }
 
-void Safety_Override(void)
-{
+void Safety_Override(void) {
     /*
       This function is intended to keep the lander from
       crashing. It checks the sonar distance array,
@@ -463,93 +477,88 @@ void Safety_Override(void)
      carry out speed corrections using the thrusters
 **************************************************/
 
-    double DistLimit;
-    double Vmag;
-    double dmin;
+	double DistLimit;
+	double Vmag;
+	double dmin;
 
-    // Establish distance threshold based on lander
-    // speed (we need more time to rectify direction
-    // at high speed)
-    Vmag=Velocity_X()*Velocity_X();
-    Vmag+=Velocity_Y()*Velocity_Y();
+	// Establish distance threshold based on lander
+	// speed (we need more time to rectify direction
+	// at high speed)
+	Vmag=Velocity_X()*Velocity_X();
+	Vmag+=Velocity_Y()*Velocity_Y();
 
-    DistLimit=fmax(75,Vmag);
+	DistLimit=fmax(75,Vmag);
 
-    // If we're close to the landing platform, disable
-    // safety override (close to the landing platform
-    // the Control_Policy() should be trusted to
-    // safely land the craft)
-    if (fabs(PLAT_X-Position_X())<150&&fabs(PLAT_Y-Position_Y())<150) return;
+	// If we're close to the landing platform, disable
+	// safety override (close to the landing platform
+	// the Control_Policy() should be trusted to
+	// safely land the craft)
+	if (fabs(PLAT_X-Position_X())<150&&fabs(PLAT_Y-Position_Y())<150) return;
 
-    // Determine the closest surfaces in the direction
-    // of motion. This is done by checking the sonar
-    // array in the quadrant corresponding to the
-    // ship's motion direction to find the entry
-    // with the smallest registered distance
+	// Determine the closest surfaces in the direction
+	// of motion. This is done by checking the sonar
+	// array in the quadrant corresponding to the
+	// ship's motion direction to find the entry
+	// with the smallest registered distance
 
-    // Horizontal direction.
-    dmin=1000000;
-    if (Velocity_X()>0)
-    {
-     for (int i=5;i<14;i++)
-      if (SONAR_DIST[i]>-1&&SONAR_DIST[i]<dmin) dmin=SONAR_DIST[i];
-    }
-    else
-    {
-     for (int i=22;i<32;i++)
-      if (SONAR_DIST[i]>-1&&SONAR_DIST[i]<dmin) dmin=SONAR_DIST[i];
-    }
-    // Determine whether we're too close for comfort. There is a reason
-    // to have this distance limit modulated by horizontal speed...
-    // what is it?
-    if (dmin<DistLimit*fmax(.25,fmin(fabs(Velocity_X())/5.0,1)))
-    { // Too close to a surface in the horizontal direction
-     if (Angle()>1&&Angle()<359)
-     {
-      if (Angle()>=180) Rotate(360-Angle());
-      else Rotate(-Angle());
-      return;
-     }
+	// Horizontal direction.
+	dmin=1000000;
+	if (Velocity_X()>0)
+	{
+		for (int i=5;i<14;i++)
+			if (SONAR_DIST[i]>-1&&SONAR_DIST[i]<dmin) dmin=SONAR_DIST[i];
+	} else {
+		for (int i=22;i<32;i++)
+			if (SONAR_DIST[i]>-1&&SONAR_DIST[i]<dmin) dmin=SONAR_DIST[i];
+	}
+	// Determine whether we're too close for comfort. There is a reason
+	// to have this distance limit modulated by horizontal speed...
+	// what is it?
 
-     if (Velocity_X()>0){
-      Right_Thruster(1.0);
-      Left_Thruster(0.0);
-     }
-     else
-     {
-      Left_Thruster(1.0);
-      Right_Thruster(0.0);
-     }
-    }
+	// Too close to a surface in the horizontal direction
+	if (dmin<DistLimit*fmax(.25,fmin(fabs(Velocity_X())/5.0,1))) {
+		if (Angle()>1&&Angle()<359) {
+			if (Angle()>=180) Rotate(360-Angle());
+			else Rotate(-Angle());
+			return;
+		}
 
-    // Vertical direction
-    dmin=1000000;
-    if (Velocity_Y()>5)      // Mind this! there is a reason for it...
-    {
-     for (int i=0; i<5; i++)
-      if (SONAR_DIST[i]>-1&&SONAR_DIST[i]<dmin) dmin=SONAR_DIST[i];
-     for (int i=32; i<36; i++)
-      if (SONAR_DIST[i]>-1&&SONAR_DIST[i]<dmin) dmin=SONAR_DIST[i];
-    }
-    else
-    {
-     for (int i=14; i<22; i++)
-      if (SONAR_DIST[i]>-1&&SONAR_DIST[i]<dmin) dmin=SONAR_DIST[i];
-    }
-    if (dmin<DistLimit)   // Too close to a surface in the horizontal direction
-    {
-     if (Angle()>1||Angle()>359)
-     {
-      if (Angle()>=180) Rotate(360-Angle());
-      else Rotate(-Angle());
-      return;
-     }
-     if (Velocity_Y()>2.0){
-      Main_Thruster(0.0);
-     }
-     else
-     {
-      Main_Thruster(1.0);
-     }
-    }
+		if (Velocity_X()>0){
+			Right_Thruster(1.0);
+			Left_Thruster(0.0);
+		} else {
+			Left_Thruster(1.0);
+			Right_Thruster(0.0);
+		}
+	}
+
+	// Vertical direction
+	dmin=1000000;
+	// Mind this! there is a reason for it...
+	if (Velocity_Y()>5) {
+		for (int i=0; i<5; i++)
+			if (SONAR_DIST[i]>-1&&SONAR_DIST[i]<dmin) dmin=SONAR_DIST[i];
+		for (int i=32; i<36; i++)
+			if (SONAR_DIST[i]>-1&&SONAR_DIST[i]<dmin) dmin=SONAR_DIST[i];
+	} else {
+		for (int i=14; i<22; i++)
+			if (SONAR_DIST[i]>-1&&SONAR_DIST[i]<dmin) dmin=SONAR_DIST[i];
+	}
+
+	// Too close to a surface in the horizontal direction
+	if (dmin<DistLimit) {
+		if (Angle()>1||Angle()>359) {
+			if (Angle()>=180) {
+				Rotate(360-Angle());
+			} else {
+				Rotate(-Angle());
+			}
+			return;
+		}
+		if (Velocity_Y()>2.0){
+			Main_Thruster(0.0);
+		} else {
+			Main_Thruster(1.0);
+		}
+	}
 }
