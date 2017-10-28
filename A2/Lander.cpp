@@ -253,9 +253,9 @@ void Lander_Control(void)
 	double error_x_integral = 0;
 	double error_x_prev = 0;
 	double k1 = 0.25;
-	double k2 = 1;
-	double k3 = 4;
-	int angle_range = 30;
+	double k2 = 0.1;
+	double k3 = 0.3;
+	int angle_range = 40;
 
 	// TODO: change this so it works if only a side thruster is available
 	if (Angle() > 0 + angle_range && Angle() < 360 - angle_range) {
@@ -264,23 +264,23 @@ void Lander_Control(void)
         return;
 	}
 
-	//error_x_prev = error_x;
+	error_x_prev = error_x;
 	/* The error is the difference in the x position of the lander and the platform */
-	//error_x = Position_X() - PLAT_X;
-	//error_x_integral += error_x;
+	error_x = Position_X() - PLAT_X;
+	error_x_integral += error_x;
 	/* PID controller */
 	/* Get the magnitude of change that's need to be made in the x for
 	 * the lander to land safely */
-	/*double change = (k1 * error_x) + (k2 * error_x_integral) + (k3 * (error_x - error_x_prev));
+	double change = (k1 * error_x) + (k2 * error_x_integral) + (k3 * (error_x - error_x_prev));
 	printf("k1k2 + k3 = %lf + %lf\n",
 		(k1 * error_x) + (k2 * error_x_integral), (k3 * (error_x - error_x_prev)));
 	change = -1 * change;
-	double degrees_to_change = 0.02 * change;
-	//printf("change = %lf degtc = %lf\n", change, degrees_to_change);
+	double degrees_to_change = change;
+	printf("change = %lf degtc = %lf\n", change, degrees_to_change);
 	Rotate(degrees_to_change);
-	int vel = 1;*/
+	int vel = 1;
 	/* If the lander is over the platform */
-	/*if (PLAT_X - 25 < Position_X() && PLAT_X + 25 > Position_X()) {
+	if (PLAT_X - 25 < Position_X() && PLAT_X + 25 > Position_X()) {
 		// If the lander is moving too fast and will crash
 		if (Velocity_Y() < VYlim) {
 			printf("dropping too fast\n");
@@ -298,10 +298,20 @@ void Lander_Control(void)
 			vel += 0.2;
 		}
 		if (vel > 1.0) { vel == 1.0; }
-	}*/
+	}
 
+	if (degrees_to_change > angle_range) {
+		degrees_to_change = angle_range;
+	} else if (degrees_to_change < -angle_range) {
+		degrees_to_change = -angle_range;
+	}
 
-	/*
+    if (Angle() >= 180) {
+		Rotate(360-Angle() + degrees_to_change);
+	} else {
+		Rotate(-Angle() + degrees_to_change);
+	}
+
 	// If the main thruster is working
 	if (MT_OK) {
 		Main_Thruster(vel);
@@ -311,7 +321,7 @@ void Lander_Control(void)
 	// If the left thruster is working
 	} else if (LT_OK) {
 		Left_Thruster(vel);
-	}*/
+	}
 
 	/*
     // Module is oriented properly, check for horizontal position
