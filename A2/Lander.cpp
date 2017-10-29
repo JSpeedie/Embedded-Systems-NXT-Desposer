@@ -262,7 +262,7 @@ void Lander_Control(void)
 	double error_vel = 0;
 	double error_vel_integral = 0;
 	double error_vel_prev = 0;
-	double vel_k1 = 4;
+	double vel_k1 = 4.5;
 	double vel_k2 = 0;
 	double vel_k3 = 0;
 	int angle_range = 30;
@@ -565,22 +565,20 @@ void Safety_Override(void)
      for (int i=14; i<22; i++)
       if (SONAR_DIST[i]>-1&&SONAR_DIST[i]<dmin) dmin=SONAR_DIST[i];
     }
-    if (dmin<DistLimit)   // Too close to a surface in the horizontal direction
-    {
-	 printf("so glad this code is unreadable\n");
-     if (Angle()>1||Angle()>359)
-     {
-      if (Angle()>=180) Rotate(360-Angle());
-      else Rotate(-Angle());
-      return;
-     }
-     if (Velocity_Y()>2.0){
-      Main_Thruster(0.0);
-     }
-     else
-     {
-	 printf("too close to horiz gotta RUN\n");
-      Main_Thruster(1.0);
-     }
-    }
+	int safe_angle_range = 15;
+	// Too close to a surface in the horizontal direction
+    if (dmin<DistLimit) {
+		printf("so glad this code is unreadable\n");
+		if (Angle() > 0 + safe_angle_range && Angle() < 360 - safe_angle_range) {
+			if (Angle()>=180) Rotate(360-Angle());
+			else Rotate(-Angle());
+			return;
+		}
+		if (Velocity_Y()>2.0) {
+			Main_Thruster(0.0);
+		} else {
+			printf("too close to horiz gotta RUN\n");
+			Main_Thruster(1.0);
+		}
+	}
 }
