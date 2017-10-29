@@ -262,7 +262,7 @@ void Lander_Control(void)
 	double error_vel = 0;
 	double error_vel_integral = 0;
 	double error_vel_prev = 0;
-	double vel_k1 = 4.5;
+	double vel_k1 = 6;
 	double vel_k2 = 0;
 	double vel_k3 = 0;
 	int angle_range = 30;
@@ -578,7 +578,12 @@ void Safety_Override(void)
 			Main_Thruster(0.0);
 		} else {
 			printf("too close to horiz gotta RUN\n");
-			Main_Thruster(1.0);
+			// If the lander is about to fly off the map, cut power to the thrusters
+			if (Position_Y() - 30 < 0) {
+				Main_Thruster(0.0);
+			} else {
+				Main_Thruster(1.0);
+			}
 		}
 	}
 }
