@@ -1,3 +1,4 @@
+
 /*
 	Lander Control simulation.
 
@@ -227,14 +228,17 @@ void Lander_Control(void)
     else if (fabs(Position_X()-PLAT_X)>100) VXlim=15;
     else VXlim=5;
 
+	/* If the lander is well above the platform */
     if (PLAT_Y-Position_Y()>200) VYlim=-20;
-    else if (PLAT_Y-Position_Y()>100) VYlim=-10;  // These are negative because they
-    else VYlim=-4;				       // limit descent velocity
+	/* If the lander is nearing the platform */
+    else if (PLAT_Y-Position_Y()>100) VYlim=-10;
+    else VYlim=-4;
 
     // Ensure we will be OVER the platform when we land
-    if (fabs(PLAT_X-Position_X())/fabs(Velocity_X())>1.25*fabs(PLAT_Y-Position_Y())/fabs(Velocity_Y())) {
+    /*if (fabs(PLAT_X-Position_X())/fabs(Velocity_X())
+		> 1.25*fabs(PLAT_Y-Position_Y())/fabs(Velocity_Y()) ) {
 		VYlim=0;
-	}
+	}*/
 
     // IMPORTANT NOTE: The code below assumes all components working
     // properly. IT MAY OR MAY NOT BE USEFUL TO YOU when components
@@ -252,10 +256,17 @@ void Lander_Control(void)
 	double error_x = 0;
 	double error_x_integral = 0;
 	double error_x_prev = 0;
-	double k1 = 0.3;
+	double k1 = 0.2;
 	double k2 = 0;
-	double k3 = 0.1;
+	double k3 = 0.06;
+	double error_vel = 0;
+	double error_vel_integral = 0;
+	double error_vel_prev = 0;
+	double vel_k1 = 4;
+	double vel_k2 = 0;
+	double vel_k3 = 0;
 	int angle_range = 30;
+	double target_vel = 1;
 
 	// TODO: change this so it works if only a side thruster is available
 	if (Angle() > 0 + angle_range && Angle() < 360 - angle_range) {
@@ -265,18 +276,24 @@ void Lander_Control(void)
 	}
 
 	error_x_prev = error_x;
+	error_vel_prev = error_vel;
 	/* The error is the difference in the x position of the lander and the platform */
 	error_x = Position_X() - PLAT_X;
+	/* If the lander is to the right of the platform */
+	if (error_x > 0) error_vel = (-target_vel) - Velocity_X();
+	/* If the lander is to the left of the platform */
+	else error_vel =  target_vel - Velocity_X();
 	error_x_integral += error_x;
+	error_vel_integral += error_vel;
 	/* PID controller */
 	/* Get the magnitude of change that's need to be made in the x for
 	 * the lander to land safely */
 	double change = (k1 * error_x) + (k2 * error_x_integral) + (k3 * (error_x - error_x_prev));
-	printf("k1k2 + k3 = %lf + %lf\n",
-		(k1 * error_x) + (k2 * error_x_integral), (k3 * (error_x - error_x_prev)));
+	double change_vel = (vel_k1 * error_vel) + (vel_k2 * error_vel_integral) + (vel_k3 * (error_vel - error_vel_prev));
 	change = -1 * change;
-	double degrees_to_change = change;
-	printf("change = %lf degtc = %lf\n", change, degrees_to_change);
+	//change_vel = -1 * change_vel;
+	double degrees_to_change = change + change_vel;
+	printf("degtc = %lf change = %lf change_vel = %lf VYlim = %lf\n", degrees_to_change, change, change_vel, VYlim);
 	int vel = 1;
 	/* If the lander is over the platform */
 	if (PLAT_X - 25 < Position_X() && PLAT_X + 25 > Position_X()) {
@@ -562,6 +579,7 @@ void Safety_Override(void)
      }
      else
      {
+	 printf("too close to horiz gotta RUN\n");
       Main_Thruster(1.0);
      }
     }
