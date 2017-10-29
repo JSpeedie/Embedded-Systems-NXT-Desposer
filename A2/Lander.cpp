@@ -252,10 +252,10 @@ void Lander_Control(void)
 	double error_x = 0;
 	double error_x_integral = 0;
 	double error_x_prev = 0;
-	double k1 = 0.25;
-	double k2 = 0.1;
-	double k3 = 0.3;
-	int angle_range = 40;
+	double k1 = 0.3;
+	double k2 = 0;
+	double k3 = 0.1;
+	int angle_range = 30;
 
 	// TODO: change this so it works if only a side thruster is available
 	if (Angle() > 0 + angle_range && Angle() < 360 - angle_range) {
@@ -277,7 +277,6 @@ void Lander_Control(void)
 	change = -1 * change;
 	double degrees_to_change = change;
 	printf("change = %lf degtc = %lf\n", change, degrees_to_change);
-	Rotate(degrees_to_change);
 	int vel = 1;
 	/* If the lander is over the platform */
 	if (PLAT_X - 25 < Position_X() && PLAT_X + 25 > Position_X()) {
@@ -299,6 +298,16 @@ void Lander_Control(void)
 		}
 		if (vel > 1.0) { vel == 1.0; }
 	}
+
+	/*if (RangeDist() > 100) {
+		if (Velocity_Y() < VYlim) {
+			printf("dropping too fast for land\n");
+			vel += 0.15;
+		} else {
+			printf("drop the lander until land\n");
+			vel -= 0.1 * (RangeDist()/120);
+		}
+	}*/
 
 	if (degrees_to_change > angle_range) {
 		degrees_to_change = angle_range;
@@ -503,8 +512,9 @@ void Safety_Override(void)
     // Determine whether we're too close for comfort. There is a reason
     // to have this distance limit modulated by horizontal speed...
     // what is it?
-    if (dmin<DistLimit*fmax(.25,fmin(fabs(Velocity_X())/5.0,1)))
+    /*if (dmin<DistLimit*fmax(.25,fmin(fabs(Velocity_X())/5.0,1)))
     { // Too close to a surface in the horizontal direction
+	 printf("sickest fucking comments\n");
      if (Angle()>1&&Angle()<359)
      {
       if (Angle()>=180) Rotate(360-Angle());
@@ -521,12 +531,13 @@ void Safety_Override(void)
       Left_Thruster(1.0);
       Right_Thruster(0.0);
      }
-    }
+    }*/
 
     // Vertical direction
     dmin=1000000;
     if (Velocity_Y()>5)      // Mind this! there is a reason for it...
     {
+	 printf("mind this!\n");
      for (int i=0; i<5; i++)
       if (SONAR_DIST[i]>-1&&SONAR_DIST[i]<dmin) dmin=SONAR_DIST[i];
      for (int i=32; i<36; i++)
@@ -539,6 +550,7 @@ void Safety_Override(void)
     }
     if (dmin<DistLimit)   // Too close to a surface in the horizontal direction
     {
+	 printf("so glad this code is unreadable\n");
      if (Angle()>1||Angle()>359)
      {
       if (Angle()>=180) Rotate(360-Angle());
