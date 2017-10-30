@@ -269,12 +269,6 @@ void Lander_Control(void)
     else if (PLAT_Y-better_Position(1)>100) VYlim=-10;
     else VYlim=-4;
 
-    // Ensure we will be OVER the platform when we land
-    /*if (fabs(PLAT_X-Position_X())/fabs(Velocity_X())
-		> 1.25*fabs(PLAT_Y-Position_Y())/fabs(Velocity_Y()) ) {
-		VYlim=0;
-	}*/
-
     // IMPORTANT NOTE: The code below assumes all components working
     // properly. IT MAY OR MAY NOT BE USEFUL TO YOU when components
     // fail. More likely, you will need a set of case-based code
@@ -351,15 +345,6 @@ void Lander_Control(void)
 		if (vel > 1.0) { vel == 1.0; }
 	}
 
-	/*if (RangeDist() > 100) {
-		if (Velocity_Y() < VYlim) {
-			printf("dropping too fast for land\n");
-			vel += 0.15;
-		} else {
-			printf("drop the lander until land\n");
-			vel -= 0.1 * (RangeDist()/120);
-		}
-	}*/
 
 	if (degrees_to_change > angle_range) {
 		degrees_to_change = angle_range;
@@ -452,29 +437,6 @@ void Safety_Override(void)
      for (int i=22;i<32;i++)
       if (SONAR_DIST[i]>-1&&SONAR_DIST[i]<dmin) dmin=SONAR_DIST[i];
     }
-    // Determine whether we're too close for comfort. There is a reason
-    // to have this distance limit modulated by horizontal speed...
-    // what is it?
-    /*if (dmin<DistLimit*fmax(.25,fmin(fabs(Velocity_X())/5.0,1)))
-    { // Too close to a surface in the horizontal direction
-	 printf("sickest fucking comments\n");
-     if (Angle()>1&&Angle()<359)
-     {
-      if (Angle()>=180) Rotate(360-Angle());
-      else Rotate(-Angle());
-      return;
-     }
-
-     if (Velocity_X()>0){
-      Right_Thruster(1.0);
-      Left_Thruster(0.0);
-     }
-     else
-     {
-      Left_Thruster(1.0);
-      Right_Thruster(0.0);
-     }
-    }*/
 
     // Vertical direction
     dmin=1000000;
@@ -494,7 +456,6 @@ void Safety_Override(void)
 	int safe_angle_range = 15;
 	// Too close to a surface in the horizontal direction
     if (dmin<DistLimit) {
-		printf("so glad this code is unreadable\n");
 		if (better_Angle() > 0 + safe_angle_range && better_Angle() < 360 - safe_angle_range) {
 			if (better_Angle()>=180) Rotate(360-better_Angle());
 			else Rotate(-better_Angle());
@@ -503,7 +464,6 @@ void Safety_Override(void)
 		if (better_Velocity(1)>2.0) {
 			Main_Thruster(0.0);
 		} else {
-			printf("too close to horiz gotta RUN\n");
 			// If the lander is about to fly off the map, cut power to the thrusters
 			if (better_Position(1) - 30 < 0) {
 				Main_Thruster(0.0);
