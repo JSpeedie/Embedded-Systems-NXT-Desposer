@@ -45,9 +45,9 @@ Questions:
    determine the state of the craft and ultimately control it 
    properly?
    	
-	Having noise sensors made it so that any movement we made was not just as simple as calling it; we had to deal with the range
-	of values it could take due to the noisy sensors.  It was still possible to control it properly, but we had to deal with 
-	the uncertainty from the sensors in our code as well.	
+	Having noisy sensors made it so that any movement we made was not just as simple as calling it; we had to deal with the range
+	of values it could take due to the noisy sensors.  It was still possible to control it properly, but our code had to deal with 
+	the uncertainty from the sensors as well.
 
 2) Describe the technique(s) you used to deal with sensor noise
 	
@@ -90,12 +90,13 @@ Questions:
    the pilot from accidentally crashing the lander?
    
    
+   
 7) Do you think it is reasonable to write such a control function?
    (i.e. a routine that takes control from a human for their
     own safety)
     	
 	Yes, sometimes the craft can get into positions that are too hard for a human pilot to react to, and in that case a 
-	control function land it for them.
+	control function could land it for them.
 	
 8) Should the pilot be aware that this software is present?
    (yes or no, and tell me why you think so!)
@@ -113,11 +114,12 @@ Questions:
 10) Can you as an embedded systems designer think of every 
     possible scenario that could go wrong so as to write 
     control software that ALWAYS works?
-    	
-	No, there will always be situations and circumstances out of your control and that are unrecoverable from. The point of a 		control software is not to account for every scenario but to account for the ones that we can recover from.
-	
 
     Think about that...
+	    	
+	No, there will always be situations and circumstances out of your control and that are unrecoverable from. The point of a 		control software is not to account for every scenario but to account for the ones that we can recover from.    
+        	
+
     
    **BONUS**
    In the fall of 1969, Jim Storer wrote a lunar lander called "Lunar Landing Game" on the language FOCAL on his school's PDP-8
