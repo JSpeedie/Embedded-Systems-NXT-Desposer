@@ -44,46 +44,87 @@ Questions:
 1) What was the impact of having noisy sensors in your ability to
    determine the state of the craft and ultimately control it 
    properly?
+   	
+	Having noise sensors made it so that any movement we made was not just as simple as calling it; we had to deal with the range
+	of values it could take due to the noisy sensors.  It was still possible to control it properly, but we had to deal with 
+	the uncertainty from the sensors in our code as well.	
 
 2) Describe the technique(s) you used to deal with sensor noise
+	
+	We used a range of possible values whenever we had to deal with sensor values and noise, because we could not rely on the 
+	sensors always giving the exact number we expected.  
 
 3) Describe your strategy for dealing with thruster failures
+	
+	We dealt with thruster failures by only using one thruster for every single case of thruster failure.  If the main thruster
+	worked we made rotations to move left/right, if the left/right thruster worked we would flip the lander so that the thruster
+	faced downwards and moved it as if it was the main thruster.
 
 4) Describe your strategy for dealing with sensor malfunctions:
 
    - Position sensors
+  	We used velocity sensors to predict the position that the lander could take after a certain amount of time.
    - Velocity sensors
+   	We used position sensors and the time passed to calculate a velocity that the lander could take.
    - Angle
+   	We kept track of the rotations made by the lander and kept a predicted angle constantly updated to check for the angle
+	sensor failure.
    - Sonar
 
    What if you have multiple failures? what could you do if, for
    example both position and velocity sensors became inoperative?
+   	
+	If both position and both velocity sensors failed, it would be almost impossible to land the lander.  We could use the intial 
+	position and velocity readings before the sensors failed and predict from there, but eventually the error in prediction
+	would make it too difficult to land.
 
 5) What was the hardest failure type to deal with (i.e. which is
    the component, either sensor or control that makes the lander
    harder to handle?)?
+   
+   	Velocity sensor failure was hardest to deal with, as getting an accurate velocity with the position sensors was inconsistent.
 
 6) Assume a human pilot was in charge of controlling the craft 
    (i.e. the pilot has control of thrusters and rotation).
    How would you change Safety_Override() so that it prevents
    the pilot from accidentally crashing the lander?
    
+   
 7) Do you think it is reasonable to write such a control function?
    (i.e. a routine that takes control from a human for their
     own safety)
-
+    	
+	Yes, sometimes the craft can get into positions that are too hard for a human pilot to react to, and in that case a 
+	control function land it for them.
+	
 8) Should the pilot be aware that this software is present?
    (yes or no, and tell me why you think so!)
+   
+   	Yes, a pilot is trained with the knowledge that their actions perform certain movements, so if a control software
+	took over their movements without their knowledge they would have difficulty controlling the craft and potentially
+	crash.
 
 9) Would you buy/drive a car that you know has control software
    that will take control from you if it estimates you are
    doing something dangerous?
+   
+   	If it was tested extensively and proven by researchers to work well, then yes.
 
 10) Can you as an embedded systems designer think of every 
     possible scenario that could go wrong so as to write 
     control software that ALWAYS works?
+    	
+	No, there will always be situations and circumstances out of your control and that are unrecoverable from. The point of a 		control software is not to account for every scenario but to account for the ones that we can recover from.
+	
 
     Think about that...
+    
+   **BONUS**
+   In the fall of 1969, Jim Storer wrote a lunar lander called "Lunar Landing Game" on the language FOCAL on his school's PDP-8
+   minicomputer system.
+   
+   source: http://www.technologizer.com/2009/07/19/lunar-lander/
+   image: http://www.technologizer.com/wp-content/uploads/2009/07/1969.png
 ________________________________________________________________
 
 Grading:
