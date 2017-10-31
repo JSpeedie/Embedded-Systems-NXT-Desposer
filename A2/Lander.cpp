@@ -70,7 +70,7 @@
 	  RT_OK		- Boolean, if 1 indicates the right thruster is working properly
 	  LT_OK		- Boolean, if 1 indicates thr left thruster is working properly
              PLAT_X	- X position of the landing platform
-             PLAY_Y        - Y position of the landing platform
+             PLAT_Y        - Y position of the landing platform
 
 	- Control of the lander is via the following functions
              (which are noisy!)
@@ -172,6 +172,9 @@ double new_y;
 int got_init_x = 0;
 double init_x = 0;
 double x_by_vx = 0;
+int got_init_y = 0;
+double init_y = 0;
+double y_by_vy = 0;
 
 double better_Position(int direction) {
 	double betterPosition = 0;
@@ -204,8 +207,6 @@ double better_Velocity(int direction){
 	} else if (direction == 1) {
 		return Velocity_Y();
 	}
-
-	//return (better_Position(direction) - better_Position(direction)) / T_STEP;
 }
 
 double better_Angle(void){
@@ -268,9 +269,12 @@ void Lander_Control(void)
            I'll give you zero.
 **************************************************/
 	double x_to_use = Position_X();
+	double y_to_use = Position_Y();
 
 	old_x = new_x;
 	new_x = Position_X();
+	old_y = new_y;
+	new_y = Position_Y();
 	/* There is no way the Lander moved 100 units in 1 frame, the X sensor must be broken */
 	if (fabs(old_x - new_x) > 100) {
 		X_OK = 0;
@@ -280,7 +284,6 @@ void Lander_Control(void)
 		Y_OK = 0;
 	}
 
-	x_by_vx += (T_STEP * 5 * Velocity_X());
 	// If we haven't got the starting x of the lander, store it in x_by_vx
 	if (got_init_x == 0) {
 		printf("getting init x\n");
@@ -288,9 +291,26 @@ void Lander_Control(void)
 		init_x = x_by_vx;
 		got_init_x = 1;
 	}
+	// If we haven't got the starting y of the lander, store it in y_by_vy
+	if (got_init_y == 0) {
+		printf("getting init y\n");
+		y_by_vy = Position_Y();
+		init_y = y_by_vy;
+		got_init_y = 1;
+	}
+	x_by_vx += (T_STEP * 5 * Velocity_X());
+	y_by_vy += (T_STEP * 5.125 * -Velocity_Y());
 
-	if (!X_OK) {
+	if (X_OK == 0) {
+		printf("x change %6.3lf -> %6.3lf", x_to_use, x_by_vx);
 		x_to_use = x_by_vx;
+		printf(" => x change %6.3lf\n", x_to_use);
+	}
+
+	if (Y_OK == 0) {
+		printf("y change %6.3lf -> %6.3lf", y_to_use, y_by_vy);
+		y_to_use = y_by_vy;
+		printf(" => y change %6.3lf\n", y_to_use);
 	}
 
     double VXlim;
@@ -306,9 +326,9 @@ void Lander_Control(void)
     else VXlim=5;
 
 	/* If the lander is well above the platform */
-    if (PLAT_Y-better_Position(1)>200) VYlim=-20;
+    if (PLAT_Y-y_to_use>200) VYlim=-20;
 	/* If the lander is nearing the platform */
-    else if (PLAT_Y-better_Position(1)>100) VYlim=-10;
+    else if (PLAT_Y-y_to_use>100) VYlim=-10;
 	else VYlim=-4;
 
     // Ensure we will be OVER the platform when we land
@@ -339,7 +359,7 @@ void Lander_Control(void)
 	double error_vel = 0;
 	double error_vel_integral = 0;
 	double error_vel_prev = 0;
-	double vel_k1 = 4.5;
+	double vel_k1 = 6;
 	double vel_k2 = 0;
 	double vel_k3 = 0;
 	int angle_range = 30;
@@ -389,8 +409,9 @@ void Lander_Control(void)
 	double bv = better_Velocity(1);
 	//printf("degtc=%5.2lf change=%5.2lf change_vel=%5.2lf vy_act=%6.3lf vy_calc=%6.3lf\n", \
 	//	degrees_to_change, change, change_vel, Velocity_Y, bv);
-	printf("vy_act=%6.3lf x_to_use=%6.3lf init_x=%6.3lf\n", \
-		Velocity_Y, x_to_use, init_x);
+
+	printf("x_to_use=%6.3lf init_x=%6.3lf y_to_use=%6.3lf init_y=%6.3lf plat_y=%6.3lf\n", \
+		x_to_use, init_x, y_to_use, init_y, PLAT_Y);
 	int vel = 1;
 	/* If the lander is over the platform */
 	if (PLAT_X - 25 < x_to_use && PLAT_X + 25 > x_to_use) {
@@ -442,7 +463,7 @@ void Lander_Control(void)
 	// If the Lander is above the platform in the x
 	if (PLAT_X - 25 < x_to_use && PLAT_X + 25 > x_to_use) {
 		// If the Lander is right above the platform vertically
-    	if (PLAT_Y-better_Position(1) < 36) {
+    	if (PLAT_Y-y_to_use < 36) {
 			printf("flip for land\n");
 			// Then set it to be at 0 degrees (head side up)
     		if (better_Angle() >= 180) {
@@ -450,7 +471,7 @@ void Lander_Control(void)
 			} else {
 				Rotate(-better_Angle());
 			}
-			vel = 0;
+			if (!MT_OK) vel = 0;
 		}
 	}
 
