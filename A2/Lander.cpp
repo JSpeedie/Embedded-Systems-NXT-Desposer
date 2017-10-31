@@ -299,7 +299,7 @@ void Lander_Control(void)
 		got_init_y = 1;
 	}
 	x_by_vx += (T_STEP * 5 * Velocity_X());
-	y_by_vy += (T_STEP * 5.125 * -Velocity_Y());
+	y_by_vy += (T_STEP * 5 * -Velocity_Y());
 
 	if (X_OK == 0) {
 		printf("x change %6.3lf -> %6.3lf", x_to_use, x_by_vx);
