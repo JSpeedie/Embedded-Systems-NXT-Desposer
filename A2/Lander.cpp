@@ -269,6 +269,7 @@ void Lander_Control(void)
     else if (PLAT_Y-better_Position(1)>100) VYlim=-10;
     else VYlim=-4;
 
+
     // IMPORTANT NOTE: The code below assumes all components working
     // properly. IT MAY OR MAY NOT BE USEFUL TO YOU when components
     // fail. More likely, you will need a set of case-based code
@@ -344,7 +345,6 @@ void Lander_Control(void)
 		}
 		if (vel > 1.0) { vel == 1.0; }
 	}
-
 
 	if (degrees_to_change > angle_range) {
 		degrees_to_change = angle_range;
