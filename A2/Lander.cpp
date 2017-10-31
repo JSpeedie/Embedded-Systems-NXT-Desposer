@@ -165,34 +165,34 @@
 
 double better_Position(int direction) {
 	double betterPosition = 0;
-        for(int i = 0; i < 50; i++){
-                if (direction == 0){ // for x
-                        betterPosition += Position_X();
-                } else if (direction == 1){ // for y
-                        betterPosition += Position_Y();
-                }
-        }
+	for(int i = 0; i < 50; i++){
+		if (direction == 0){ // for x
+			betterPosition += Position_X();
+		} else if (direction == 1){ // for y
+			betterPosition += Position_Y();
+		}
+	}
 	return betterPosition / 50;
 }
 
 double better_Velocity(int direction){
-        double betterVelocity = 0;
-        for(int i = 0; i < 50; i++){
-                if (direction == 0){ // for x
-                        betterVelocity += Velocity_X();
-                } else if (direction == 1){ // for y
-                        betterVelocity += Velocity_Y();
-                }
-        }
-        return betterVelocity / 50;
+	double betterVelocity = 0;
+	for(int i = 0; i < 50; i++){
+		if (direction == 0){ // for x
+			betterVelocity += Velocity_X();
+		} else if (direction == 1){ // for y
+			betterVelocity += Velocity_Y();
+		}
+	}
+	return betterVelocity / 50;
 }
 
 double better_Angle(void){
-        double betterAngle = 0;
+	double betterAngle = 0;
 	for(int i = 0; i < 50; i++){
-                betterAngle += Angle();
-        }
-        return betterAngle / 50;
+		betterAngle += Angle();
+	}
+	return betterAngle / 50;
 }
 
 void Lander_Control(void)
@@ -299,11 +299,27 @@ void Lander_Control(void)
 	int angle_range = 30;
 	double target_vel = 1;
 
-	// TODO: change this so it works if only a side thruster is available
-	if (better_Angle() > 0 + angle_range && better_Angle() < 360 - angle_range) {
-        if (better_Angle()>=180) Rotate(360-better_Angle());
-        else Rotate(-better_Angle());
-        return;
+	if (MT_OK) {
+		if (better_Angle() > 0 + angle_range && better_Angle() < 360 - angle_range) {
+			if (better_Angle()>=180) Rotate(360-better_Angle());
+			else Rotate(-better_Angle());
+			return;
+		}
+	} else if (RT_OK) {
+		if ((better_Angle() - 90 > 0 + angle_range) && (better_Angle() - 90 < 360 - angle_range)) {
+			if (better_Angle() - 90 >= 180) {
+				Rotate(360-better_Angle() + 90);
+			} else {
+				Rotate(-better_Angle() + 90);
+			}
+			return;
+		}
+	} else if (LT_OK) {
+		if ((better_Angle() + 90 > 0 + angle_range) && (better_Angle() + 90 < 360 - angle_range)) {
+			if (better_Angle() + 90 >=180) Rotate(360-better_Angle() - 90);
+			else Rotate(-better_Angle() - 90);
+			return;
+		}
 	}
 
 	error_x_prev = error_x;
@@ -353,10 +369,41 @@ void Lander_Control(void)
 		degrees_to_change = -angle_range;
 	}
 
-    if (better_Angle() >= 180) {
-		Rotate(360-better_Angle() + degrees_to_change);
-	} else {
-		Rotate(-better_Angle() + degrees_to_change);
+	if (MT_OK) {
+    	if (better_Angle() >= 180) {
+			Rotate(360-better_Angle() + degrees_to_change);
+		} else {
+			Rotate(-better_Angle() + degrees_to_change);
+		}
+	} else if (RT_OK) {
+    	if (better_Angle() - 90 >= 180) {
+			Rotate(360-better_Angle() + 90 + degrees_to_change);
+		} else {
+			Rotate(-better_Angle() + 90 + degrees_to_change);
+		}
+	} else if (LT_OK) {
+    	if (better_Angle() + 90 >= 180) {
+			Rotate(360-better_Angle() - 90 + degrees_to_change);
+		} else {
+			Rotate(-better_Angle() - 90 + degrees_to_change);
+		}
+	}
+
+	// If the Lander is above the platform in the x
+	if (PLAT_X - 25 < better_Position(0) && PLAT_X + 25 > better_Position(0)) {
+		// If the Lander is right above the platform vertically
+    	if (PLAT_Y-better_Position(1) < 36) {
+			printf("flip for land\n");
+			printf("flip for land\n");
+			printf("flip for land\n");
+			// Then set it to be at 0 degrees (head side up)
+    		if (better_Angle() >= 180) {
+				Rotate(360-better_Angle());
+			} else {
+				Rotate(-better_Angle());
+			}
+			vel = 0;
+		}
 	}
 
 	// If the main thruster is working
@@ -480,11 +527,31 @@ void Safety_Override(void)
 	// Too close to a surface in the horizontal direction
     if (dmin<DistLimit) {
 		printf("so glad this code is unreadable\n");
-		if (Angle() > 0 + safe_angle_range && Angle() < 360 - safe_angle_range) {
-			if (Angle()>=180) Rotate(360-Angle());
-			else Rotate(-Angle());
-			return;
+		/* Safely lower the lander depending on which thruster is available */
+		if (MT_OK) {
+			if (better_Angle() > 0 + safe_angle_range && better_Angle() < 360 - safe_angle_range) {
+				if (better_Angle()>=180) Rotate(360-better_Angle());
+				else Rotate(-better_Angle());
+				return;
+			}
+		} else if (RT_OK) {
+			if ((better_Angle() - 90 > 0 + safe_angle_range) \
+				&& (better_Angle() - 90 < 360 - safe_angle_range)) {
+
+				if (better_Angle() - 90 >= 180) Rotate(360-better_Angle() + 90);
+				else Rotate(-better_Angle() + 90);
+				return;
+			}
+		} else if (LT_OK) {
+			if ((better_Angle() + 90 > 0 + safe_angle_range) \
+				&& (better_Angle() + 90 < 360 - safe_angle_range)) {
+
+				if (better_Angle() + 90 >= 180) Rotate(360-better_Angle() - 90);
+				else Rotate(-better_Angle() - 90);
+				return;
+			}
 		}
+
 		if (better_Velocity(1)>2.0) {
 			Main_Thruster(0.0);
 		} else {
