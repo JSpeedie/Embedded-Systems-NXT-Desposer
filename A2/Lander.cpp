@@ -165,16 +165,28 @@
 
 int X_OK = 1;
 int Y_OK = 1;
+int VX_OK = 1;
+int VY_OK = 1;
 double old_x;
 double new_x;
 double old_y;
 double new_y;
+double old_vx;
+double new_vx;
+double old_vy;
+double new_vy;
+double old_x_for_v;
+double new_x_for_v;
+double old_y_for_v;
+double new_y_for_v;
 int got_init_x = 0;
 double init_x = 0;
 double x_by_vx = 0;
+double vx_by_x = 0;
 int got_init_y = 0;
 double init_y = 0;
 double y_by_vy = 0;
+double vy_by_y = 0;
 
 double better_Position(int direction) {
 	double betterPosition = 0;
@@ -270,11 +282,21 @@ void Lander_Control(void)
 **************************************************/
 	double x_to_use = Position_X();
 	double y_to_use = Position_Y();
+	double vx_to_use = Velocity_X();
+	double vy_to_use = Velocity_Y();
 
 	old_x = new_x;
 	new_x = Position_X();
 	old_y = new_y;
 	new_y = Position_Y();
+	old_vx = new_vx;
+	new_vx = Velocity_X();
+	old_vy = new_vy;
+	new_vy = Velocity_Y();
+	old_x_for_v = new_x_for_v;
+	old_y_for_v = new_y_for_v;
+	new_x_for_v = Position_X();
+	new_y_for_v = Position_Y();
 	/* There is no way the Lander moved 100 units in 1 frame, the X sensor must be broken */
 	if (fabs(old_x - new_x) > 100) {
 		X_OK = 0;
@@ -282,6 +304,14 @@ void Lander_Control(void)
 	/* There is no way the Lander moved 100 units in 1 frame, the Y sensor must be broken */
 	if (fabs(old_y - new_y) > 100) {
 		Y_OK = 0;
+	}
+	/* There is no way the Lander's velocity changed by 100 units in 1 frame, the VX sensor must be broken */
+	if (fabs(old_vx - new_vx) > 100) {
+		VX_OK = 0;
+	}
+	/* There is no way the Lander's velocity changed by 100 units in 1 frame, the VY sensor must be broken */
+	if (fabs(old_vy - new_vy) > 100) {
+		VY_OK = 0;
 	}
 
 	// If we haven't got the starting x of the lander, store it in x_by_vx
@@ -300,17 +330,23 @@ void Lander_Control(void)
 	}
 	x_by_vx += (T_STEP * 5 * Velocity_X());
 	y_by_vy += (T_STEP * 5 * -Velocity_Y());
+	vx_to_use += (T_STEP / 5 * (new_x_for_v - old_x_for_v));
+	vy_to_use += (T_STEP / 5 * -(new_y_for_v - old_x_for_v));
 
 	if (X_OK == 0) {
-		printf("x change %6.3lf -> %6.3lf", x_to_use, x_by_vx);
 		x_to_use = x_by_vx;
-		printf(" => x change %6.3lf\n", x_to_use);
 	}
 
 	if (Y_OK == 0) {
-		printf("y change %6.3lf -> %6.3lf", y_to_use, y_by_vy);
 		y_to_use = y_by_vy;
-		printf(" => y change %6.3lf\n", y_to_use);
+	}
+
+	if (VX_OK == 0) {
+		vx_to_use = vx_by_x;
+	}
+
+	if (VY_OK == 0) {
+		vy_to_use = vy_by_y;
 	}
 
     double VXlim;
@@ -330,12 +366,6 @@ void Lander_Control(void)
 	/* If the lander is nearing the platform */
     else if (PLAT_Y-y_to_use>100) VYlim=-10;
 	else VYlim=-4;
-
-    // Ensure we will be OVER the platform when we land
-    /*if (fabs(PLAT_X-Position_X())/fabs(Velocity_X())
-		> 1.25*fabs(PLAT_Y-Position_Y())/fabs(Velocity_Y()) ) {
-		VYlim=0;
-	}*/
 
     // IMPORTANT NOTE: The code below assumes all components working
     // properly. IT MAY OR MAY NOT BE USEFUL TO YOU when components
@@ -393,9 +423,9 @@ void Lander_Control(void)
 	/* The error is the difference in the x position of the lander and the platform */
 	error_x = x_to_use - PLAT_X;
 	/* If the lander is to the right of the platform */
-	if (error_x > 0) error_vel = (-target_vel) - better_Velocity(0);
+	if (error_x > 0) error_vel = (-target_vel) - vx_to_use;
 	/* If the lander is to the left of the platform */
-	else error_vel =  target_vel - better_Velocity(0);
+	else error_vel =  target_vel - vx_to_use;
 	error_x_integral += error_x;
 	error_vel_integral += error_vel;
 	/* PID controller */
@@ -404,19 +434,14 @@ void Lander_Control(void)
 	double change = (k1 * error_x) + (k2 * error_x_integral) + (k3 * (error_x - error_x_prev));
 	double change_vel = (vel_k1 * error_vel) + (vel_k2 * error_vel_integral) + (vel_k3 * (error_vel - error_vel_prev));
 	change = -1 * change;
-	//change_vel = -1 * change_vel;
 	double degrees_to_change = change + change_vel;
-	double bv = better_Velocity(1);
-	//printf("degtc=%5.2lf change=%5.2lf change_vel=%5.2lf vy_act=%6.3lf vy_calc=%6.3lf\n", \
-	//	degrees_to_change, change, change_vel, Velocity_Y, bv);
-
-	printf("x_to_use=%6.3lf init_x=%6.3lf y_to_use=%6.3lf init_y=%6.3lf plat_y=%6.3lf\n", \
-		x_to_use, init_x, y_to_use, init_y, PLAT_Y);
+	printf("vx_to_use=%6.3lf vy_to_use=%6.3lf\n", \
+		vx_to_use, vy_to_use);
 	int vel = 1;
 	/* If the lander is over the platform */
 	if (PLAT_X - 25 < x_to_use && PLAT_X + 25 > x_to_use) {
 		// If the lander is moving too fast and will crash
-		if (better_Velocity(1) < VYlim) {
+		if (vy_to_use < VYlim) {
 			printf("dropping too fast\n");
 			vel += 0.15;
 		} else {
@@ -426,7 +451,7 @@ void Lander_Control(void)
 	// If the lander is not over the platform
 	} else {
 		// Keep it at a slow descent
-		if (better_Velocity(1) > -1) {
+		if (vy_to_use > -1) {
 			vel -= 0.2;
 		} else {
 			vel += 0.2;
@@ -556,29 +581,6 @@ void Safety_Override(void)
      for (int i=22;i<32;i++)
       if (SONAR_DIST[i]>-1&&SONAR_DIST[i]<dmin) dmin=SONAR_DIST[i];
     }
-    // Determine whether we're too close for comfort. There is a reason
-    // to have this distance limit modulated by horizontal speed...
-    // what is it?
-    /*if (dmin<DistLimit*fmax(.25,fmin(fabs(better_Velocity(0))/5.0,1)))
-    { // Too close to a surface in the horizontal direction
-     if (Angle()>1&&Angle()<359)
-     {
-      if (Angle()>=180) Rotate(360-Angle());
-      else Rotate(-Angle());
-      return;
-     }
-
-     if (better_Velocity(0)>0){
-      Right_Thruster(1.0);
-      Left_Thruster(0.0);
-     }
-     else
-     {
-      Left_Thruster(1.0);
-      Right_Thruster(0.0);
-     }
-    }*/
-
     // Vertical direction
     dmin=1000000;
     if (better_Velocity(1)>5)      // Mind this! there is a reason for it...
