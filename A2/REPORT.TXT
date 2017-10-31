@@ -46,13 +46,11 @@ Questions:
    properly?
    	
 	Having noisy sensors made it so that any movement we made was not just as simple as calling it; we had to deal with the range
-	of values it could take due to the noisy sensors.  It was still possible to control it properly, but our code had to deal with 
-	the uncertainty from the sensors as well.
+	of values it could take due to the noisy sensors.
 
 2) Describe the technique(s) you used to deal with sensor noise
 	
-	We used a range of possible values whenever we had to deal with sensor values and noise, because we could not rely on the 
-	sensors always giving the exact number we expected.  
+	We sampled 50 readings each of each sensor, so that we could take an average and get a more accurate reading from the noisy 		sensor.  
 
 3) Describe your strategy for dealing with thruster failures
 	
