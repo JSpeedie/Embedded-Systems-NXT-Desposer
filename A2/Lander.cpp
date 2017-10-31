@@ -1,4 +1,3 @@
-
 /*
 	Lander Control simulation.
 
