@@ -163,6 +163,38 @@
 
 #include "Lander_Control.h"
 
+double better_Position(int direction) {
+	double betterPosition = 0;
+        for(int i = 0; i < 50; i++){
+                if (direction == 0){ // for x
+                        betterPosition += Position_X();
+                } else if (direction == 1){ // for y
+                        betterPosition += Position_Y();
+                }
+        }
+	return betterPosition / 50;
+}
+
+double better_Velocity(int direction){
+        double betterVelocity = 0;
+        for(int i = 0; i < 50; i++){
+                if (direction == 0){ // for x
+                        betterVelocity += Velocity_X();
+                } else if (direction == 1){ // for y
+                        betterVelocity += Velocity_Y();
+                }
+        }
+        return betterVelocity / 50;
+}
+
+double better_Angle(void){
+        double betterAngle = 0;
+	for(int i = 0; i < 50; i++){
+                betterAngle += Angle();
+        }
+        return betterAngle / 50;
+}
+
 void Lander_Control(void)
 {
     /*
@@ -223,15 +255,15 @@ void Lander_Control(void)
     // move faster, decrease speed limits as the module
     // approaches landing. You may need to be more conservative
     // with velocity limits when things fail.
-    if (fabs(Position_X()-PLAT_X)>200) VXlim=25;
-    else if (fabs(Position_X()-PLAT_X)>100) VXlim=15;
+	if (fabs(better_Position(0)-PLAT_X)>200) VXlim=25;
+    else if (fabs(better_Position(0)-PLAT_X)>100) VXlim=15;
     else VXlim=5;
 
 	/* If the lander is well above the platform */
-    if (PLAT_Y-Position_Y()>200) VYlim=-20;
+    if (PLAT_Y-better_Position(1)>200) VYlim=-20;
 	/* If the lander is nearing the platform */
-    else if (PLAT_Y-Position_Y()>100) VYlim=-10;
-    else VYlim=-4;
+    else if (PLAT_Y-better_Position(1)>100) VYlim=-10;
+	else VYlim=-4;
 
     // Ensure we will be OVER the platform when we land
     /*if (fabs(PLAT_X-Position_X())/fabs(Velocity_X())
@@ -268,20 +300,20 @@ void Lander_Control(void)
 	double target_vel = 1;
 
 	// TODO: change this so it works if only a side thruster is available
-	if (Angle() > 0 + angle_range && Angle() < 360 - angle_range) {
-        if (Angle()>=180) Rotate(360-Angle());
-        else Rotate(-Angle());
+	if (better_Angle() > 0 + angle_range && better_Angle() < 360 - angle_range) {
+        if (better_Angle()>=180) Rotate(360-better_Angle());
+        else Rotate(-better_Angle());
         return;
 	}
 
 	error_x_prev = error_x;
 	error_vel_prev = error_vel;
 	/* The error is the difference in the x position of the lander and the platform */
-	error_x = Position_X() - PLAT_X;
+	error_x = better_Position(0) - PLAT_X;
 	/* If the lander is to the right of the platform */
-	if (error_x > 0) error_vel = (-target_vel) - Velocity_X();
+	if (error_x > 0) error_vel = (-target_vel) - better_Velocity(0);
 	/* If the lander is to the left of the platform */
-	else error_vel =  target_vel - Velocity_X();
+	else error_vel =  target_vel - better_Velocity(0);
 	error_x_integral += error_x;
 	error_vel_integral += error_vel;
 	/* PID controller */
@@ -295,9 +327,9 @@ void Lander_Control(void)
 	printf("degtc = %lf change = %lf change_vel = %lf VYlim = %lf\n", degrees_to_change, change, change_vel, VYlim);
 	int vel = 1;
 	/* If the lander is over the platform */
-	if (PLAT_X - 25 < Position_X() && PLAT_X + 25 > Position_X()) {
+	if (PLAT_X - 25 < better_Position(0) && PLAT_X + 25 > better_Position(0)) {
 		// If the lander is moving too fast and will crash
-		if (Velocity_Y() < VYlim) {
+		if (better_Velocity(1) < VYlim) {
 			printf("dropping too fast\n");
 			vel += 0.15;
 		} else {
@@ -307,7 +339,7 @@ void Lander_Control(void)
 	// If the lander is not over the platform
 	} else {
 		// Keep it at a slow descent
-		if (Velocity_Y() > -1) {
+		if (better_Velocity(1) > -1) {
 			vel -= 0.2;
 		} else {
 			vel += 0.2;
@@ -315,26 +347,16 @@ void Lander_Control(void)
 		if (vel > 1.0) { vel == 1.0; }
 	}
 
-	/*if (RangeDist() > 100) {
-		if (Velocity_Y() < VYlim) {
-			printf("dropping too fast for land\n");
-			vel += 0.15;
-		} else {
-			printf("drop the lander until land\n");
-			vel -= 0.1 * (RangeDist()/120);
-		}
-	}*/
-
 	if (degrees_to_change > angle_range) {
 		degrees_to_change = angle_range;
 	} else if (degrees_to_change < -angle_range) {
 		degrees_to_change = -angle_range;
 	}
 
-    if (Angle() >= 180) {
-		Rotate(360-Angle() + degrees_to_change);
+    if (better_Angle() >= 180) {
+		Rotate(360-better_Angle() + degrees_to_change);
 	} else {
-		Rotate(-Angle() + degrees_to_change);
+		Rotate(-better_Angle() + degrees_to_change);
 	}
 
 	// If the main thruster is working
@@ -347,116 +369,6 @@ void Lander_Control(void)
 	} else if (LT_OK) {
 		Left_Thruster(vel);
 	}
-
-	/*
-    // Module is oriented properly, check for horizontal position
-    // and set thrusters appropriately.
-    if (Position_X()>PLAT_X)
-    {
-	if(LT_OK){
-		// Lander is to the LEFT of the landing platform, use Right thrusters to move
-		// lander to the left.
-		// Make sure we're not fighting ourselves here!
-		Left_Thruster(0);
-		if (Velocity_X()>(-VXlim)) {
-			Right_Thruster((VXlim+fmin(0,Velocity_X()))/VXlim);
-		} else {
-				// Exceeded velocity limit, brake
-				Right_Thruster(0);
-				Left_Thruster(fabs(VXlim-Velocity_X()));
-		}
-	} else {
-		Right_Thruster(0);
-		Rotate(20);
-	}
-	}
-	else {
-	// Lander is to the RIGHT of the landing platform, opposite from above
-	if(RT_OK){
-		Right_Thruster(0);
-		if (Velocity_X()<VXlim) {
-			Left_Thruster((VXlim-fmax(0,Velocity_X()))/VXlim);
-		} else {
-			Left_Thruster(0);
-			Right_Thruster(fabs(VXlim-Velocity_X()));
-		}
-	} else {
-		Left_Thruster(0);
-	}
-
-	}*/
-
-
-    // Vertical adjustments. Basically, keep the module below the limit for
-    // vertical velocity and allow for continuous descent. We trust
-    // Safety_Override() to save us from crashing with the ground.
-    //if (Velocity_Y() < VYlim) {
-		//printf("vel y = %lf\n", Velocity_Y());
-		//printf("angle = %lf\n", Angle());
-        	/*if (MT_OK) {
-			Main_Thruster(1.0);
-		} else if (!MT_OK) {*/
-			/* If the lander is at an angle where using the left thruster
-			 * would slow down its vertical momentum */
-        	/*if (Angle() <= 315 && Angle() >= 270) {
-				Right_Thruster(0);
-				Left_Thruster(1);*/
-			/* If the lander is NOT at an angle where using the left thruster
-			 * would slow down its vertical momentum */
-			/*} else {
-				Left_Thruster(0);
-				Rotate(200);
-				//printf("angle = %lf\n", Angle());
-			}
-		}
-    } else {
-		if (MT_OK) {
-			Main_Thruster(0);
-		} else if (!MT_OK) {
-			Left_Thruster(0);
-			Right_Thruster(0);
-		}
-	}*/
-
-        /*Rotate(-90);
-        if (Angle() <= 270 && Angle() >= 180) {
-			Left_Thruster(1);
-		} else {
-			Left_Thruster(0);
-		}*/
-		/*Rotate(90);
-        if (Angle() >= 90 && Angle() <= 180) {
-			Right_Thruster(1);
-		}*/
-
-    /*if(!RT_OK){ // for right thruster failure
-	if(Position_X() > PLAT_X){
-		Rotate(-50);
-	} else if(Position_X() < PLAT_X){
-		Rotate(50);
-	} else if(Position_X() == PLAT_X){
-		 if (Angle()>1&&Angle()<359 && init == 0) {
-	         if (Angle()>=180) Rotate(360-Angle());
-       	 	 else Rotate(-Angle());
-	    }
-
-	}
-    }
-    if(!LT_OK){ // for left thruster failure
-	if(Position_X() > PLAT_X){
-                Rotate(50);
-        } else if(Position_X() < PLAT_X){
-                Rotate(-50);
-        } else if(Position_X() == PLAT_X){
-                 if (Angle()>1&&Angle()<359 && init == 0) {
-                 if (Angle()>=180) Rotate(360-Angle());
-                 else Rotate(-Angle());
-            }
-
-        }
-
-    }*/
-
 }
 
 void Safety_Override(void)
@@ -496,8 +408,8 @@ void Safety_Override(void)
     // Establish distance threshold based on lander
     // speed (we need more time to rectify direction
     // at high speed)
-    Vmag=Velocity_X()*Velocity_X();
-    Vmag+=Velocity_Y()*Velocity_Y();
+    Vmag=better_Velocity(0)*better_Velocity(0);
+    Vmag+=better_Velocity(1)*better_Velocity(1);
 
     DistLimit=fmax(75,Vmag);
 
@@ -505,7 +417,7 @@ void Safety_Override(void)
     // safety override (close to the landing platform
     // the Control_Policy() should be trusted to
     // safely land the craft)
-    if (fabs(PLAT_X-Position_X())<150&&fabs(PLAT_Y-Position_Y())<150) return;
+    if (fabs(PLAT_X-better_Position(0))<150&&fabs(PLAT_Y-better_Position(1))<150) return;
 
     // Determine the closest surfaces in the direction
     // of motion. This is done by checking the sonar
@@ -515,7 +427,7 @@ void Safety_Override(void)
 
     // Horizontal direction.
     dmin=1000000;
-    if (Velocity_X()>0)
+    if (better_Velocity(0)>0)
     {
      for (int i=5;i<14;i++)
       if (SONAR_DIST[i]>-1&&SONAR_DIST[i]<dmin) dmin=SONAR_DIST[i];
@@ -528,7 +440,7 @@ void Safety_Override(void)
     // Determine whether we're too close for comfort. There is a reason
     // to have this distance limit modulated by horizontal speed...
     // what is it?
-    /*if (dmin<DistLimit*fmax(.25,fmin(fabs(Velocity_X())/5.0,1)))
+    /*if (dmin<DistLimit*fmax(.25,fmin(fabs(better_Velocity(0))/5.0,1)))
     { // Too close to a surface in the horizontal direction
 	 printf("sickest fucking comments\n");
      if (Angle()>1&&Angle()<359)
@@ -538,7 +450,7 @@ void Safety_Override(void)
       return;
      }
 
-     if (Velocity_X()>0){
+     if (better_Velocity(0)>0){
       Right_Thruster(1.0);
       Left_Thruster(0.0);
      }
@@ -551,7 +463,7 @@ void Safety_Override(void)
 
     // Vertical direction
     dmin=1000000;
-    if (Velocity_Y()>5)      // Mind this! there is a reason for it...
+    if (better_Velocity(1)>5)      // Mind this! there is a reason for it...
     {
 	 printf("mind this!\n");
      for (int i=0; i<5; i++)
@@ -573,12 +485,12 @@ void Safety_Override(void)
 			else Rotate(-Angle());
 			return;
 		}
-		if (Velocity_Y()>2.0) {
+		if (better_Velocity(1)>2.0) {
 			Main_Thruster(0.0);
 		} else {
 			printf("too close to horiz gotta RUN\n");
 			// If the lander is about to fly off the map, cut power to the thrusters
-			if (Position_Y() - 30 < 0) {
+			if (better_Position(1) - 30 < 0) {
 				Main_Thruster(0.0);
 			} else {
 				Main_Thruster(1.0);
