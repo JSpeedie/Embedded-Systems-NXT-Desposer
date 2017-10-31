@@ -163,6 +163,16 @@
 
 #include "Lander_Control.h"
 
+int X_OK = 1;
+int Y_OK = 1;
+double old_x;
+double new_x;
+double old_y;
+double new_y;
+int got_init_x = 0;
+double init_x = 0;
+double x_by_vx = 0;
+
 double better_Position(int direction) {
 	double betterPosition = 0;
 	for(int i = 0; i < 50; i++){
@@ -172,19 +182,30 @@ double better_Position(int direction) {
 			betterPosition += Position_Y();
 		}
 	}
-	return betterPosition / 50;
+
+	betterPosition /= 50;
+	return betterPosition;
 }
 
 double better_Velocity(int direction){
-	double betterVelocity = 0;
-	for(int i = 0; i < 50; i++){
+	double betterVelocity = 0.0;
+	/*for(int i = 0; i < 50; i++){
 		if (direction == 0){ // for x
 			betterVelocity += Velocity_X();
 		} else if (direction == 1){ // for y
 			betterVelocity += Velocity_Y();
 		}
 	}
-	return betterVelocity / 50;
+
+	betterVelocity /= 50;
+	return betterVelocity;*/
+	if (direction == 0) {
+		return Velocity_X();
+	} else if (direction == 1) {
+		return Velocity_Y();
+	}
+
+	//return (better_Position(direction) - better_Position(direction)) / T_STEP;
 }
 
 double better_Angle(void){
@@ -246,6 +267,31 @@ void Lander_Control(void)
            ACCESS THE SIMULATION STATE. That's cheating,
            I'll give you zero.
 **************************************************/
+	double x_to_use = Position_X();
+
+	old_x = new_x;
+	new_x = Position_X();
+	/* There is no way the Lander moved 100 units in 1 frame, the X sensor must be broken */
+	if (fabs(old_x - new_x) > 100) {
+		X_OK = 0;
+	}
+	/* There is no way the Lander moved 100 units in 1 frame, the Y sensor must be broken */
+	if (fabs(old_y - new_y) > 100) {
+		Y_OK = 0;
+	}
+
+	x_by_vx += (T_STEP * 5 * Velocity_X());
+	// If we haven't got the starting x of the lander, store it in x_by_vx
+	if (got_init_x == 0) {
+		printf("getting init x\n");
+		x_by_vx = Position_X();
+		init_x = x_by_vx;
+		got_init_x = 1;
+	}
+
+	if (!X_OK) {
+		x_to_use = x_by_vx;
+	}
 
     double VXlim;
     double VYlim;
@@ -255,8 +301,8 @@ void Lander_Control(void)
     // move faster, decrease speed limits as the module
     // approaches landing. You may need to be more conservative
     // with velocity limits when things fail.
-	if (fabs(better_Position(0)-PLAT_X)>200) VXlim=25;
-    else if (fabs(better_Position(0)-PLAT_X)>100) VXlim=15;
+	if (fabs(x_to_use-PLAT_X)>200) VXlim=25;
+    else if (fabs(x_to_use-PLAT_X)>100) VXlim=15;
     else VXlim=5;
 
 	/* If the lander is well above the platform */
@@ -293,7 +339,7 @@ void Lander_Control(void)
 	double error_vel = 0;
 	double error_vel_integral = 0;
 	double error_vel_prev = 0;
-	double vel_k1 = 6;
+	double vel_k1 = 4.5;
 	double vel_k2 = 0;
 	double vel_k3 = 0;
 	int angle_range = 30;
@@ -325,7 +371,7 @@ void Lander_Control(void)
 	error_x_prev = error_x;
 	error_vel_prev = error_vel;
 	/* The error is the difference in the x position of the lander and the platform */
-	error_x = better_Position(0) - PLAT_X;
+	error_x = x_to_use - PLAT_X;
 	/* If the lander is to the right of the platform */
 	if (error_x > 0) error_vel = (-target_vel) - better_Velocity(0);
 	/* If the lander is to the left of the platform */
@@ -340,10 +386,14 @@ void Lander_Control(void)
 	change = -1 * change;
 	//change_vel = -1 * change_vel;
 	double degrees_to_change = change + change_vel;
-	printf("degtc = %lf change = %lf change_vel = %lf VYlim = %lf\n", degrees_to_change, change, change_vel, VYlim);
+	double bv = better_Velocity(1);
+	//printf("degtc=%5.2lf change=%5.2lf change_vel=%5.2lf vy_act=%6.3lf vy_calc=%6.3lf\n", \
+	//	degrees_to_change, change, change_vel, Velocity_Y, bv);
+	printf("vy_act=%6.3lf x_to_use=%6.3lf init_x=%6.3lf\n", \
+		Velocity_Y, x_to_use, init_x);
 	int vel = 1;
 	/* If the lander is over the platform */
-	if (PLAT_X - 25 < better_Position(0) && PLAT_X + 25 > better_Position(0)) {
+	if (PLAT_X - 25 < x_to_use && PLAT_X + 25 > x_to_use) {
 		// If the lander is moving too fast and will crash
 		if (better_Velocity(1) < VYlim) {
 			printf("dropping too fast\n");
@@ -390,11 +440,9 @@ void Lander_Control(void)
 	}
 
 	// If the Lander is above the platform in the x
-	if (PLAT_X - 25 < better_Position(0) && PLAT_X + 25 > better_Position(0)) {
+	if (PLAT_X - 25 < x_to_use && PLAT_X + 25 > x_to_use) {
 		// If the Lander is right above the platform vertically
     	if (PLAT_Y-better_Position(1) < 36) {
-			printf("flip for land\n");
-			printf("flip for land\n");
 			printf("flip for land\n");
 			// Then set it to be at 0 degrees (head side up)
     		if (better_Angle() >= 180) {
@@ -464,7 +512,10 @@ void Safety_Override(void)
     // safety override (close to the landing platform
     // the Control_Policy() should be trusted to
     // safely land the craft)
-    if (fabs(PLAT_X-better_Position(0))<150&&fabs(PLAT_Y-better_Position(1))<150) return;
+    if (fabs(PLAT_X-better_Position(0))<150&&fabs(PLAT_Y-better_Position(1))<150) {
+		printf("close to plat safety\n");
+		return;
+	}
 
     // Determine the closest surfaces in the direction
     // of motion. This is done by checking the sonar
@@ -489,7 +540,6 @@ void Safety_Override(void)
     // what is it?
     /*if (dmin<DistLimit*fmax(.25,fmin(fabs(better_Velocity(0))/5.0,1)))
     { // Too close to a surface in the horizontal direction
-	 printf("sickest fucking comments\n");
      if (Angle()>1&&Angle()<359)
      {
       if (Angle()>=180) Rotate(360-Angle());
@@ -512,7 +562,6 @@ void Safety_Override(void)
     dmin=1000000;
     if (better_Velocity(1)>5)      // Mind this! there is a reason for it...
     {
-	 printf("mind this!\n");
      for (int i=0; i<5; i++)
       if (SONAR_DIST[i]>-1&&SONAR_DIST[i]<dmin) dmin=SONAR_DIST[i];
      for (int i=32; i<36; i++)
@@ -526,7 +575,6 @@ void Safety_Override(void)
 	int safe_angle_range = 15;
 	// Too close to a surface in the horizontal direction
     if (dmin<DistLimit) {
-		printf("so glad this code is unreadable\n");
 		/* Safely lower the lander depending on which thruster is available */
 		if (MT_OK) {
 			if (better_Angle() > 0 + safe_angle_range && better_Angle() < 360 - safe_angle_range) {
@@ -552,16 +600,34 @@ void Safety_Override(void)
 			}
 		}
 
-		if (better_Velocity(1)>2.0) {
-			Main_Thruster(0.0);
+		/*if (better_Velocity(1)>2.0) {
+			printf("safety moving too fast\n");
+			if (MT_OK) {
+				Main_Thruster(0.0);
+			} else if (RT_OK) {
+				Right_Thruster(0.0);
+			} else if (LT_OK) {
+				Left_Thruster(0.0);
+			}
 		} else {
-			printf("too close to horiz gotta RUN\n");
 			// If the lander is about to fly off the map, cut power to the thrusters
 			if (better_Position(1) - 30 < 0) {
-				Main_Thruster(0.0);
+				if (MT_OK) {
+					Main_Thruster(0.0);
+				} else if (RT_OK) {
+					Right_Thruster(0.0);
+				} else if (LT_OK) {
+					Left_Thruster(0.0);
+				}
 			} else {
-				Main_Thruster(1.0);
+				if (MT_OK) {
+					Main_Thruster(1.0);
+				} else if (RT_OK) {
+					Right_Thruster(1.0);
+				} else if (LT_OK) {
+					Left_Thruster(1.0);
+				}
 			}
-		}
+		}*/
 	}
 }
