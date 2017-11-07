@@ -178,7 +178,7 @@ void ApplyHorizontalForce(void) {
 	}
 
 
-	if ((st - old_st) >= 0.99) {
+	if (st > 1) {
 		error_angle_prev = error_angle;
 		error_angle = theta;
 		error_angle_total += error_angle;
@@ -198,7 +198,23 @@ void ApplyHorizontalForce(void) {
 		F += F_v;
 		old_st = st;
 	} else {
-		printf("\nst-old=%lf\n", st - old_st);
+		error_angle_prev = error_angle;
+                error_angle = theta;
+                error_angle_total += error_angle;
+                error_angle_diff = (error_angle - error_angle_prev);
+                // Theta "velocity" info
+                error_velt_prev = error_velt;
+                error_velt = error_angle_diff;
+                error_velt_total += error_velt;
+                error_velt_diff = (error_velt - error_velt_prev);
+
+                F = (k1 * error_angle) + (k2 * error_angle_total) + (k3 * error_angle_diff);
+                double F_b = F;
+                // Multiply F by the some linear function of the sampling rate. Slower rate = bigger F
+                double F_v = (velt_k1 * error_velt) \
+                        + (velt_k2 * error_velt_total) \
+                        + (velt_k3 * error_velt_diff);
+                F/st;
 	}
 	fprintf(stderr,"%lf\n",F);
 	return;

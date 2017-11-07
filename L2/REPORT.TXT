@@ -3,16 +3,16 @@ CSC C85 - Lab #2
 Control systems implementation - Inverted pendulum
 _________________________________________________________
 
-Team name:
+Team name: Speed of Darkness
 
-Name 1 (last, first):
-Student number 1:
+Name 1 (last, first): Balakrishnan, Krisanthan
+Student number 1: 999468366
 
-Name 2 (last, first):
-Student number 2:
+Name 2 (last, first): Soltan, Vadim
+Student number 2: 1002433342
 
-Name 3 (last, first):
-Student number 3:
+Name 3 (last, first): Speedie, Julian
+Student number 3: 1001712952
 
 (special - lose marks for not completing the information above)
 _________________________________________________________
@@ -22,44 +22,71 @@ Questions:
 0) What are the input(s) and output(s) of the system? what is the
    error signal you used to determine the force to be exerted by
    your controller?
+        Inputs: mass of bar, length of bar, mass of cart, sampling rate, perturbation
+        Outputs: Force
+        We used the angle velocity and the angle to determine the force to be exerted by the controller.
 
 1) What is the effect of m, m1, and l1 on the controllability of the
     system? what are the range of values for these variables that
     your controller can handle?
- 
+
+        If l1 is bigger, the angle changes slower so it's easier to control.
+        If m is bigger, the cart moves slower from force, but it's still controllable.
+        If m1 is bigger, the cart bar swings more from force, and it's much harder to control.
+
 2) How does your controller work? explain to me the way this function
     decides how much force to apply. There should be a good reason for
     doing things, i.e. trial and error won't work well and won't result
     in a decent controller. Also, explain how you handled variations in
     the model's parameters.
 
+        We used two PID controllers on both the angle and the angle velocity so that we could get to a reference state of
+        a vertical bar.  To handle variation in weight of the cart and the bar, we used them together in a ratio for determining
+        our PID k values.  To handle variation in length of the bar, we factored the length into our PIDs.  For sampling, we tried
+        manipulating the force relative to the sampling rate, but this didn't end up working.  We didn't handle any cases for pertubation, as
+        it should work regardless of what angle it starts on.
+
 3) What is the effect of the sampling period sp on the ability of your
     code to control the pendulum?
- 
+
+       The sampling rate made our force apply too much/little force over time, and this resulted in our cart moving too much or too little
+        which made it much harder to control the pendulum.  If the sp was 1, the cart moved smoothly.
+
 4) In an actual system, sp is typically a function of how long it takes
     for the control software to do the required computations and update
     all required variables. Given your answer to 3), do you think that
     a standard operationg system such as desktop Linux or Windows are
     suitable for running control software for critical systems?
 
+        Linux has a very accurate time system so it may be used for critical systems, Windows may work depending on the version of the
+        OS.
+
 5) You can easily balance an inverted umbrella, broom, or similar object
     on your hand. Do you think your brain builds a physical model of
     the system and then solves equations to accomplish this? if no,
     how do you think it manages to keep things balanced?
+
+        No, there's too many variables that the brain keeps track of that cannot be modeled in a physical
+        model.  It uses the complex nervous system functions in our brains that account for many factors that a
+        control system cannot account for, and we use our previous experiences as well.
 ________________________________________________________
 
 Grading:
 
-- Attending lab and working hard			-	/ 15
-- Programming solution						/ 60
-	* Stabilizing pendulum for simple task (40)
-	* Stabilizing pendulum for hard task (20)
-- Completed report and answers to the questions(25)		/25
+- Attending lab and working hard                        -       / 15
+- Programming solution                                          / 60
+        * Stabilizing pendulum for simple task (40)
+        * Stabilizing pendulum for hard task (20)
+- Completed report and answers to the questions(25)             /25
 
-- Penalty marks (TA assigned)				-
+- Penalty marks (TA assigned)                           -
 
-Total for Lab 3							/100	
+Total for Lab 3                                                 /100
 
 (*) This mark is conditional on every member of the team being able
     to explain any aspect of the work when asked.
+
+
+
+
 
