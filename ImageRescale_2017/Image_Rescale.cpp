@@ -100,7 +100,6 @@
 #include<time.h>
 
 #include<unistd.h>
-#include<sys/wait.h>
 /*
   Function prototypes
 */
@@ -147,7 +146,7 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 	unsigned char *dst;			// Destination image - must be allocated here!
 
 	// CHANGE 15: used malloc instead of calloc since it is not necessary to clear the mem
-	dst=(unsigned char *)malloc(dest_x*dest_y*3*sizeof(unsigned char));   // Allocate and clear destination image
+	dst=(unsigned char *)malloc(dest_x*dest_y*3);   // Allocate and clear destination image
 	if (!dst) return(NULL);					       // Unable to allocate image
 
 	step_x=(double)(src_x-1)/(double)(dest_x-1);
@@ -243,7 +242,6 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 		exit(0);
 	} else {
 		int stat;
-		wait(&stat);
 	}
 	return(dst);
 }
