@@ -197,19 +197,20 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 			unsigned char *src_cfx_cfy_loc = src + (cfx + cfy_loc + cfx + cfy_loc + cfx + cfy_loc);
 			// CHANGE 2: Inlined getPixel calls
 			/*getPixel(src, ffx, ffy, src_x, &R1, &G1, &B1);	// get N1 colours*/
-			R1 = *(src_ffx_ffy_loc+0);
+			// CHANGE 16: removed unnecessary +0
+			R1 = *(src_ffx_ffy_loc);
 			G1 = *(src_ffx_ffy_loc+1);
 			B1 = *(src_ffx_ffy_loc+2);
 			/*getPixel(src, cfx, ffy, src_x, &R2, &G2, &B2);	// get N2 colours*/
-			R2 = *(src_cfx_ffy_loc+0);
+			R2 = *(src_cfx_ffy_loc);
 			G2 = *(src_cfx_ffy_loc+1);
 			B2 = *(src_cfx_ffy_loc+2);
 			/*getPixel(src, ffx, cfy, src_x, &R3, &G3, &B3);	// get N3 colours*/
-			R3 = *(src_ffx_cfy_loc+0);
+			R3 = *(src_ffx_cfy_loc);
 			G3 = *(src_ffx_cfy_loc+1);
 			B3 = *(src_ffx_cfy_loc+2);
 			/*getPixel(src, cfx, cfy, src_x, &R4, &G4, &B4);	// get N4 colours*/
-			R4 = *(src_cfx_cfy_loc+0);
+			R4 = *(src_cfx_cfy_loc);
 			G4 = *(src_cfx_cfy_loc+1);
 			B4 = *(src_cfx_cfy_loc+2);
 			// Interpolate to get T1 and T2 colours
@@ -238,11 +239,7 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 		}
 	}
 	// Exit the child process after it has done its job
-	if (pid == 0) {
-		exit(0);
-	} else {
-		int stat;
-	}
+	if (pid == 0) exit(0);
 	return(dst);
 }
 
