@@ -7,7 +7,7 @@
 
   The setup:
 
-   One of the most common tasks in image processing is that of 
+   One of the most common tasks in image processing is that of
   taking an image or video at low resolution and rescaling it.
   You see this done all the time when you change the size of your
   video window, or choose to stretch a small video to full screen.
@@ -99,6 +99,8 @@
 #include<string.h>
 #include<time.h>
 
+#include<unistd.h>
+#include<sys/wait.h>
 /*
   Function prototypes
 */
@@ -133,6 +135,7 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 	// TODO:
 	// Check if loop unroll is safe (check for %2 and %3)
 	// Use lookup table?? 
+	// fork
 
 
 	// CHANGE 7: Reordered these variables so the most used were declared first
@@ -149,8 +152,18 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 	step_x=(double)(src_x-1)/(double)(dest_x-1);
 	step_y=(double)(src_y-1)/(double)(dest_y-1);
 
+		// CHANGE 13: Forked the rescaling.
+		pid_t pid = fork();
+		int x = 0;
+		int cap = dest_x/2;
+		// If we are in the child process, loop bottom half of image
+		if (pid == 0) {
+			x = cap;
+			cap = dest_x;
+		}
+
 	// Loop over destination image
-	for (int x=0;x<dest_x;x++) {
+	for (; x < cap; x++) {
 		// CHANGE 5: declared variables relative to the x only in the x section of the loop
 		double fx=x*step_x;
 		double dx=fx-(int)fx;
@@ -160,7 +173,7 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 		int ffx = floor(fx);
 		int cfx = ceil(fx);
 
-		for (int y=0;y<dest_y;) {
+		for (int y = 0; y < dest_y;) {
 			// CHANGE 4: declared these variables in the loop rather than at the start of the
 			//           function
 			double fy=y*step_y;
@@ -178,32 +191,32 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 			unsigned char *src_cfx_cfy_loc = src + (cfx + cfy_loc + cfx + cfy_loc + cfx + cfy_loc);
 			// CHANGE 2: Inlined getPixel calls
 			/*getPixel(src, ffx, ffy, src_x, &R1, &G1, &B1);	// get N1 colours*/
-			R1=*(src_ffx_ffy_loc+0);
-			G1=*(src_ffx_ffy_loc+1);
-			B1=*(src_ffx_ffy_loc+2);
+			R1 = *(src_ffx_ffy_loc+0);
+			G1 = *(src_ffx_ffy_loc+1);
+			B1 = *(src_ffx_ffy_loc+2);
 			/*getPixel(src, cfx, ffy, src_x, &R2, &G2, &B2);	// get N2 colours*/
-			R2=*(src_cfx_ffy_loc+0);
-			G2=*(src_cfx_ffy_loc+1);
-			B2=*(src_cfx_ffy_loc+2);
+			R2 = *(src_cfx_ffy_loc+0);
+			G2 = *(src_cfx_ffy_loc+1);
+			B2 = *(src_cfx_ffy_loc+2);
 			/*getPixel(src, ffx, cfy, src_x, &R3, &G3, &B3);	// get N3 colours*/
-			R3=*(src_ffx_cfy_loc+0);
-			G3=*(src_ffx_cfy_loc+1);
-			B3=*(src_ffx_cfy_loc+2);
+			R3 = *(src_ffx_cfy_loc+0);
+			G3 = *(src_ffx_cfy_loc+1);
+			B3 = *(src_ffx_cfy_loc+2);
 			/*getPixel(src, cfx, cfy, src_x, &R4, &G4, &B4);	// get N4 colours*/
-			R4=*(src_cfx_cfy_loc+0);
-			G4=*(src_cfx_cfy_loc+1);
-			B4=*(src_cfx_cfy_loc+2);
+			R4 = *(src_cfx_cfy_loc+0);
+			G4 = *(src_cfx_cfy_loc+1);
+			B4 = *(src_cfx_cfy_loc+2);
 			// Interpolate to get T1 and T2 colours
-			double RT1=(dx*R2)+(1-dx)*R1;
-			double GT1=(dx*G2)+(1-dx)*G1;
-			double BT1=(dx*B2)+(1-dx)*B1;
-			double RT2=(dx*R4)+(1-dx)*R3;
-			double GT2=(dx*G4)+(1-dx)*G3;
-			double BT2=(dx*B4)+(1-dx)*B3;
+			double RT1 = (dx*R2)+(1-dx)*R1;
+			double GT1 = (dx*G2)+(1-dx)*G1;
+			double BT1 = (dx*B2)+(1-dx)*B1;
+			double RT2 = (dx*R4)+(1-dx)*R3;
+			double GT2 = (dx*G4)+(1-dx)*G3;
+			double BT2 = (dx*B4)+(1-dx)*B3;
 			// Obtain final colour by interpolating between T1 and T2
-			R=(unsigned char)((dy*RT2)+((1-dy)*RT1));
-			G=(unsigned char)((dy*GT2)+((1-dy)*GT1));
-			B=(unsigned char)((dy*BT2)+((1-dy)*BT1));
+			R = (unsigned char)((dy*RT2)+((1-dy)*RT1));
+			G = (unsigned char)((dy*GT2)+((1-dy)*GT1));
+			B = (unsigned char)((dy*BT2)+((1-dy)*BT1));
 			// Store the final colour
 			// CHANGE 8: Inlined setPixel calls
 			/*setPixel(dst,x,y,dest_x,R,G,B);*/
@@ -211,113 +224,21 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 			// CHANGE 10: Applied Strength Reduction to local var calculation
 			//     avg=1.2818
 			int pixel_offset = x + (y*dest_x) + x + (y*dest_x) + x + (y*dest_x);
-			*(dst + pixel_offset + 0) = R;
-			*(dst + pixel_offset + 1) = G;
-			*(dst + pixel_offset + 2) = B;
-			y++;
-			/*
-			 * CHANGE 5.a: UNROLL the loop once
-			 */
-			// CHANGE 4: declared these variables in the loop rather than at the start of the
-			//           function
-			fy=y*step_y;
-			dy=fy-(int)fy;
-			// CHANGE 1: stored result of floor and ceil calls
-			ffx = floor(fx);
-			cfx = ceil(fx);
-			// CHANGE 3: Saved calculations used in inlined-getPixel in local vars to avoid
-			//         Recalculation.
-			ffy_loc = (((int) floor(fy))*src_x);
-			cfy_loc = (((int) ceil(fy))*src_x);
-			src_ffx_ffy_loc = src + (ffx + ffy_loc + ffx + ffy_loc + ffx + ffy_loc);
-			src_cfx_ffy_loc = src + (cfx + ffy_loc + cfx + ffy_loc + cfx + ffy_loc);
-			src_ffx_cfy_loc = src + (ffx + cfy_loc + ffx + cfy_loc + ffx + cfy_loc);
-			src_cfx_cfy_loc = src + (cfx + cfy_loc + cfx + cfy_loc + cfx + cfy_loc);
-			// CHANGE 2: Inlined getPixel calls
-			/*getPixel(src, ffx, ffy, src_x, &R1, &G1, &B1);	// get N1 colours*/
-			R1=*(src_ffx_ffy_loc+0);
-			G1=*(src_ffx_ffy_loc+1);
-			B1=*(src_ffx_ffy_loc+2);
-			/*getPixel(src, cfx, ffy, src_x, &R2, &G2, &B2);	// get N2 colours*/
-			R2=*(src_cfx_ffy_loc+0);
-			G2=*(src_cfx_ffy_loc+1);
-			B2=*(src_cfx_ffy_loc+2);
-			/*getPixel(src, ffx, cfy, src_x, &R3, &G3, &B3);	// get N3 colours*/
-			R3=*(src_ffx_cfy_loc+0);
-			G3=*(src_ffx_cfy_loc+1);
-			B3=*(src_ffx_cfy_loc+2);
-			/*getPixel(src, cfx, cfy, src_x, &R4, &G4, &B4);	// get N4 colours*/
-			R4=*(src_cfx_cfy_loc+0);
-			G4=*(src_cfx_cfy_loc+1);
-			B4=*(src_cfx_cfy_loc+2);
-			// Interpolate to get T1 and T2 colours
-			RT1=(dx*R2)+(1-dx)*R1;
-			GT1=(dx*G2)+(1-dx)*G1;
-			BT1=(dx*B2)+(1-dx)*B1;
-			RT2=(dx*R4)+(1-dx)*R3;
-			GT2=(dx*G4)+(1-dx)*G3;
-			BT2=(dx*B4)+(1-dx)*B3;
-			// Obtain final colour by interpolating between T1 and T2
-			R=(unsigned char)((dy*RT2)+((1-dy)*RT1));
-			G=(unsigned char)((dy*GT2)+((1-dy)*GT1));
-			B=(unsigned char)((dy*BT2)+((1-dy)*BT1));
-			// Store the final colour
-			pixel_offset = x + (y*dest_x) + x + (y*dest_x) + x + (y*dest_x);
-			*(dst + pixel_offset + 0) = R;
-			*(dst + pixel_offset + 1) = G;
-			*(dst + pixel_offset + 2) = B;
-			y++;
-			/*
-			 * CHANGE 5.b: UNROLL a second time
-			 */
-			fy=y*step_y;
-			dy=fy-(int)fy;
-			// CHANGE 1: stored result of floor and ceil calls
-			ffx = floor(fx);
-			cfx = ceil(fx);
-			// CHANGE 3: Saved calculations used in inlined-getPixel in local vars to avoid
-			//         Recalculation.
-			ffy_loc = (((int) floor(fy))*src_x);
-			cfy_loc = (((int) ceil(fy))*src_x);
-			src_ffx_ffy_loc = src + (ffx + ffy_loc + ffx + ffy_loc + ffx + ffy_loc);
-			src_cfx_ffy_loc = src + (cfx + ffy_loc + cfx + ffy_loc + cfx + ffy_loc);
-			src_ffx_cfy_loc = src + (ffx + cfy_loc + ffx + cfy_loc + ffx + cfy_loc);
-			src_cfx_cfy_loc = src + (cfx + cfy_loc + cfx + cfy_loc + cfx + cfy_loc);
-			// CHANGE 2: Inlined getPixel calls
-			/*getPixel(src, ffx, ffy, src_x, &R1, &G1, &B1);	// get N1 colours*/
-			R1=*(src_ffx_ffy_loc+0);
-			G1=*(src_ffx_ffy_loc+1);
-			B1=*(src_ffx_ffy_loc+2);
-			/*getPixel(src, cfx, ffy, src_x, &R2, &G2, &B2);	// get N2 colours*/
-			R2=*(src_cfx_ffy_loc+0);
-			G2=*(src_cfx_ffy_loc+1);
-			B2=*(src_cfx_ffy_loc+2);
-			/*getPixel(src, ffx, cfy, src_x, &R3, &G3, &B3);	// get N3 colours*/
-			R3=*(src_ffx_cfy_loc+0);
-			G3=*(src_ffx_cfy_loc+1);
-			B3=*(src_ffx_cfy_loc+2);
-			/*getPixel(src, cfx, cfy, src_x, &R4, &G4, &B4);	// get N4 colours*/
-			R4=*(src_cfx_cfy_loc+0);
-			G4=*(src_cfx_cfy_loc+1);
-			B4=*(src_cfx_cfy_loc+2);
-			// Interpolate to get T1 and T2 colours
-			RT1=(dx*R2)+(1-dx)*R1;
-			GT1=(dx*G2)+(1-dx)*G1;
-			BT1=(dx*B2)+(1-dx)*B1;
-			RT2=(dx*R4)+(1-dx)*R3;
-			GT2=(dx*G4)+(1-dx)*G3;
-			BT2=(dx*B4)+(1-dx)*B3;
-			// Obtain final colour by interpolating between T1 and T2
-			R=(unsigned char)((dy*RT2)+((1-dy)*RT1));
-			G=(unsigned char)((dy*GT2)+((1-dy)*GT1));
-			B=(unsigned char)((dy*BT2)+((1-dy)*BT1));
-			// Store the final colour
-			pixel_offset = x + (y*dest_x) + x + (y*dest_x) + x + (y*dest_x);
+			//if (y > dest_y/2) { printf("changing lower half\n"); }
 			*(dst + pixel_offset + 0) = R;
 			*(dst + pixel_offset + 1) = G;
 			*(dst + pixel_offset + 2) = B;
 			y++;
 		}
+	}
+	// Exit the child process after it has done its job
+	if (pid == 0) {
+		//printf("exiting child\n");
+		exit(0);
+	} else {
+		int stat;
+		//printf("waiting for child\n");
+		wait(&stat);
 	}
 	return(dst);
 }
