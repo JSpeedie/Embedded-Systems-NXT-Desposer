@@ -146,7 +146,8 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 	double step_x,step_y;
 	unsigned char *dst;			// Destination image - must be allocated here!
 
-	dst=(unsigned char *)calloc(dest_x*dest_y*3,sizeof(unsigned char));   // Allocate and clear destination image
+	// CHANGE 15: used malloc instead of calloc since it is not necessary to clear the mem
+	dst=(unsigned char *)malloc(dest_x*dest_y*3*sizeof(unsigned char));   // Allocate and clear destination image
 	if (!dst) return(NULL);					       // Unable to allocate image
 
 	step_x=(double)(src_x-1)/(double)(dest_x-1);
@@ -170,8 +171,11 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 		// CHANGE 11: Declared variables relative to x in the x section of the loop
 		//     avg=1.2882
 		// CHANGE 1: stored result of floor and ceil calls
-		int ffx = floor(fx);
-		int cfx = ceil(fx);
+		// CHANGE 14: Used faster floor and ceiling methods
+		/*int ffx = floor(fx);
+		int cfx = ceil(fx);*/
+		int ffx = (int)(fx + 32768.) - 32768; // flooring
+		int cfx = 32768 - (int)(32768. - fx); // ceiling
 
 		for (int y = 0; y < dest_y;) {
 			// CHANGE 4: declared these variables in the loop rather than at the start of the
@@ -180,8 +184,11 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 			double dy=fy-(int)fy;
 			// CHANGE 3: Saved calculations used in inlined-getPixel in local vars to avoid
 			//         Recalculation.
-			int ffy_loc = (((int) floor(fy))*src_x);
-			int cfy_loc = (((int) ceil(fy))*src_x);
+			// CHANGE 14: Used faster floor and ceiling methods
+			/*int ffy_loc = (((int) floor(fy))*src_x);
+			int cfy_loc = (((int) ceil(fy))*src_x);*/
+			int ffy_loc = ((int)(fy + 32768.) - 32768) * src_x; // flooring
+			int cfy_loc = (32768 - (int)(32768. - fy)) * src_x; // ceiling
 			// CHANGE 6: Strength Reduction to these calculations  replacing '((cfx + ffy_loc) * 3)'
 			//           with 'cfx + ffy_loc + cfx + ffy_loc + cfx + ffy_loc'
 			//     avg=1.2774
@@ -233,11 +240,9 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 	}
 	// Exit the child process after it has done its job
 	if (pid == 0) {
-		//printf("exiting child\n");
 		exit(0);
 	} else {
 		int stat;
-		//printf("waiting for child\n");
 		wait(&stat);
 	}
 	return(dst);
