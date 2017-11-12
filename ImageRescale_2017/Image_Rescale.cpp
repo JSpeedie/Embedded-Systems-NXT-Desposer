@@ -99,7 +99,6 @@
 #include<string.h>
 #include<time.h>
 
-#include<unistd.h>
 /*
   Function prototypes
 */
@@ -133,9 +132,6 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 {
 	// TODO:
 	// Check if loop unroll is safe (check for %2 and %3)
-	// Use lookup table?? 
-	// fork
-
 
 	// CHANGE 7: Reordered these variables so the most used were declared first
 	//     avg=1.2782
@@ -152,18 +148,8 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 	step_x=(double)(src_x-1)/(double)(dest_x-1);
 	step_y=(double)(src_y-1)/(double)(dest_y-1);
 
-		// CHANGE 13: Forked the rescaling.
-		pid_t pid = fork();
-		int x = 0;
-		int cap = dest_x/2;
-		// If we are in the child process, loop bottom half of image
-		if (pid == 0) {
-			x = cap;
-			cap = dest_x;
-		}
-
 	// Loop over destination image
-	for (; x < cap; x++) {
+	for (int x = 0; x < dest_x; x++) {
 		// CHANGE 5: declared variables relative to the x only in the x section of the loop
 		double fx=x*step_x;
 		double dx=fx-(int)fx;
@@ -214,16 +200,19 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 			G4 = *(src_cfx_cfy_loc+1);
 			B4 = *(src_cfx_cfy_loc+2);
 			// Interpolate to get T1 and T2 colours
-			double RT1 = (dx*R2)+(1-dx)*R1;
-			double GT1 = (dx*G2)+(1-dx)*G1;
-			double BT1 = (dx*B2)+(1-dx)*B1;
-			double RT2 = (dx*R4)+(1-dx)*R3;
-			double GT2 = (dx*G4)+(1-dx)*G3;
-			double BT2 = (dx*B4)+(1-dx)*B3;
+			// CHANGE 17: Stored '1-dx' and '1-dy' in a local variables to save on recalculation
+			double one_minus_dx = 1 - dx;
+			double one_minus_dy = 1 - dy;
+			double RT1 = (dx*R2)+(one_minus_dx)*R1;
+			double GT1 = (dx*G2)+(one_minus_dx)*G1;
+			double BT1 = (dx*B2)+(one_minus_dx)*B1;
+			double RT2 = (dx*R4)+(one_minus_dx)*R3;
+			double GT2 = (dx*G4)+(one_minus_dx)*G3;
+			double BT2 = (dx*B4)+(one_minus_dx)*B3;
 			// Obtain final colour by interpolating between T1 and T2
-			R = (unsigned char)((dy*RT2)+((1-dy)*RT1));
-			G = (unsigned char)((dy*GT2)+((1-dy)*GT1));
-			B = (unsigned char)((dy*BT2)+((1-dy)*BT1));
+			R = (unsigned char)((dy*RT2)+((one_minus_dy)*RT1));
+			G = (unsigned char)((dy*GT2)+((one_minus_dy)*GT1));
+			B = (unsigned char)((dy*BT2)+((one_minus_dy)*BT1));
 			// Store the final colour
 			// CHANGE 8: Inlined setPixel calls
 			/*setPixel(dst,x,y,dest_x,R,G,B);*/
@@ -231,15 +220,12 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 			// CHANGE 10: Applied Strength Reduction to local var calculation
 			//     avg=1.2818
 			int pixel_offset = x + (y*dest_x) + x + (y*dest_x) + x + (y*dest_x);
-			//if (y > dest_y/2) { printf("changing lower half\n"); }
-			*(dst + pixel_offset + 0) = R;
+			*(dst + pixel_offset) = R;
 			*(dst + pixel_offset + 1) = G;
 			*(dst + pixel_offset + 2) = B;
 			y++;
 		}
 	}
-	// Exit the child process after it has done its job
-	if (pid == 0) exit(0);
 	return(dst);
 }
 
