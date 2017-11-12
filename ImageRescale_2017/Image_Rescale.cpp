@@ -132,12 +132,14 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 {
 	// TODO:
 	// Check if loop unroll is safe (check for %2 and %3)
-	// 
+	// Use lookup table?? 
 
 
 	// CHANGE 7: Reordered these variables so the most used were declared first
 	//     avg=1.2782
-	unsigned char R1,R2,R3,R4,G1,G2,G3,G4,B1,B2,B3,B4,R,G,B;
+	// CHANGE 12: Declared these with the register keyword since they are used often
+	//     avg=1.3054
+	register unsigned char R1,R2,R3,R4,G1,G2,G3,G4,B1,B2,B3,B4,R,G,B;
 	double step_x,step_y;
 	unsigned char *dst;			// Destination image - must be allocated here!
 
@@ -157,6 +159,7 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 		// CHANGE 1: stored result of floor and ceil calls
 		int ffx = floor(fx);
 		int cfx = ceil(fx);
+
 		for (int y=0;y<dest_y;) {
 			// CHANGE 4: declared these variables in the loop rather than at the start of the
 			//           function
