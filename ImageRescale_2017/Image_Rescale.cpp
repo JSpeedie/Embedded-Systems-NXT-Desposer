@@ -166,12 +166,17 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 		int cfx = 32768 - (int)(32768. - fx); // ceiling
 		// CHANGE 19: avoided multiplication by adding to fy each iteration
 		//double fy = -step_y;
-		//double fy = 0;
+		double fy = 0;
+		int old_ffy = -1;
+		int old_cfy = -1;
+		double RT1, GT1, BT1, RT2, GT2, BT2;
+				unsigned char *src_ffx_ffy_loc;
+				unsigned char *src_cfx_ffy_loc;
+				unsigned char *src_ffx_cfy_loc;
+				unsigned char *src_cfx_cfy_loc;
 
-		//int y = dest_y - 1;
-		//while (y >= 0) {
-		for (int y = 0; y < dest_y;) {
-			double fy = y*step_y;
+		for (int y = 0; y < dest_y; y++) {
+			fy = y*step_y;
 			// CHANGE 4: declared these variables in the loop rather than at the start of the
 			//           function
 			double dy=fy-(int)fy;
@@ -180,44 +185,57 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 			// CHANGE 14: Used faster floor and ceiling methods
 			/*int ffy_loc = (((int) floor(fy))*src_x);
 			int cfy_loc = (((int) ceil(fy))*src_x);*/
-			int ffy_loc = ((int)(fy + 32768.) - 32768) * src_x; // flooring
-			int cfy_loc = (32768 - (int)(32768. - fy)) * src_x; // ceiling
-			// CHANGE 6: Strength Reduction to these calculations  replacing '((cfx + ffy_loc) * 3)'
-			//           with 'cfx + ffy_loc + cfx + ffy_loc + cfx + ffy_loc'
-			//     avg=1.2774
-			unsigned char *src_ffx_ffy_loc = src + (ffx + ffy_loc + ffx + ffy_loc + ffx + ffy_loc);
-			unsigned char *src_cfx_ffy_loc = src + (cfx + ffy_loc + cfx + ffy_loc + cfx + ffy_loc);
-			unsigned char *src_ffx_cfy_loc = src + (ffx + cfy_loc + ffx + cfy_loc + ffx + cfy_loc);
-			unsigned char *src_cfx_cfy_loc = src + (cfx + cfy_loc + cfx + cfy_loc + cfx + cfy_loc);
-			// CHANGE 2: Inlined getPixel calls
-			/*getPixel(src, ffx, ffy, src_x, &R1, &G1, &B1);	// get N1 colours*/
-			// CHANGE 16: removed unnecessary +0
-			R1 = *(src_ffx_ffy_loc);
-			G1 = *(src_ffx_ffy_loc+1);
-			B1 = *(src_ffx_ffy_loc+2);
-			/*getPixel(src, cfx, ffy, src_x, &R2, &G2, &B2);	// get N2 colours*/
-			R2 = *(src_cfx_ffy_loc);
-			G2 = *(src_cfx_ffy_loc+1);
-			B2 = *(src_cfx_ffy_loc+2);
-			/*getPixel(src, ffx, cfy, src_x, &R3, &G3, &B3);	// get N3 colours*/
-			R3 = *(src_ffx_cfy_loc);
-			G3 = *(src_ffx_cfy_loc+1);
-			B3 = *(src_ffx_cfy_loc+2);
-			/*getPixel(src, cfx, cfy, src_x, &R4, &G4, &B4);	// get N4 colours*/
-			R4 = *(src_cfx_cfy_loc);
-			G4 = *(src_cfx_cfy_loc+1);
-			B4 = *(src_cfx_cfy_loc+2);
-			// Interpolate to get T1 and T2 colours
-			// CHANGE 17: Stored '1-dx' and '1-dy' in a local variables to save on recalculation
-			double one_minus_dx = 1 - dx;
+			int ffy = ((int)(fy + 32768.) - 32768); // flooring
+			int ffy_loc = ffy * src_x;
+			int cfy = (32768 - (int)(32768. - fy)); // ceiling
+			int cfy_loc = cfy * src_x;
+
+			// If the point is in a new pixel
+			// CHANGE 20: Only recalculated x interpolations if in a new pixel
+			//     in the y. Massive speed increase here.
+			//     avg=2.6206
+			if (ffy != old_ffy || cfy != old_cfy) {
+				//if (ffx == 0) printf("new pixel x=%d fy=%lf ffy=%d old_ffy=%d step=%lf\n", x, fy, ffy, old_ffy, step_y);
+				// CHANGE 6: Strength Reduction to these calculations  replacing '((cfx + ffy_loc) * 3)'
+				//           with 'cfx + ffy_loc + cfx + ffy_loc + cfx + ffy_loc'
+				//     avg=1.2774
+				src_ffx_ffy_loc = src + (ffx + ffy_loc + ffx + ffy_loc + ffx + ffy_loc);
+				src_cfx_ffy_loc = src + (cfx + ffy_loc + cfx + ffy_loc + cfx + ffy_loc);
+				src_ffx_cfy_loc = src + (ffx + cfy_loc + ffx + cfy_loc + ffx + cfy_loc);
+				src_cfx_cfy_loc = src + (cfx + cfy_loc + cfx + cfy_loc + cfx + cfy_loc);
+				// CHANGE 2: Inlined getPixel calls
+				/*getPixel(src, ffx, ffy, src_x, &R1, &G1, &B1);	// get N1 colours*/
+				// CHANGE 16: removed unnecessary +0
+				R1 = *(src_ffx_ffy_loc);
+				G1 = *(src_ffx_ffy_loc+1);
+				B1 = *(src_ffx_ffy_loc+2);
+				/*getPixel(src, cfx, ffy, src_x, &R2, &G2, &B2);	// get N2 colours*/
+				R2 = *(src_cfx_ffy_loc);
+				G2 = *(src_cfx_ffy_loc+1);
+				B2 = *(src_cfx_ffy_loc+2);
+				/*getPixel(src, ffx, cfy, src_x, &R3, &G3, &B3);	// get N3 colours*/
+				R3 = *(src_ffx_cfy_loc);
+				G3 = *(src_ffx_cfy_loc+1);
+				B3 = *(src_ffx_cfy_loc+2);
+				/*getPixel(src, cfx, cfy, src_x, &R4, &G4, &B4);	// get N4 colours*/
+				R4 = *(src_cfx_cfy_loc);
+				G4 = *(src_cfx_cfy_loc+1);
+				B4 = *(src_cfx_cfy_loc+2);
+				// Interpolate to get T1 and T2 colours
+				// CHANGE 17: Stored '1-dx' and '1-dy' in a local variables to save on recalculation
+				double one_minus_dx = 1 - dx;
+				RT1 = (dx*R2)+(one_minus_dx)*R1;
+				GT1 = (dx*G2)+(one_minus_dx)*G1;
+				BT1 = (dx*B2)+(one_minus_dx)*B1;
+				RT2 = (dx*R4)+(one_minus_dx)*R3;
+				GT2 = (dx*G4)+(one_minus_dx)*G3;
+				BT2 = (dx*B4)+(one_minus_dx)*B3;
+			}
+
+
+
+
 			double one_minus_dy = 1 - dy;
-			double RT1 = (dx*R2)+(one_minus_dx)*R1;
-			double GT1 = (dx*G2)+(one_minus_dx)*G1;
-			double BT1 = (dx*B2)+(one_minus_dx)*B1;
-			double RT2 = (dx*R4)+(one_minus_dx)*R3;
-			double GT2 = (dx*G4)+(one_minus_dx)*G3;
-			double BT2 = (dx*B4)+(one_minus_dx)*B3;
-			printf("RT1=%lf GT1=%lf BT1=%lf RT2=%lf GT2=%lf BT2=%lf\n", RT1, BT1, GT1, RT2, BT2, GT2);
 			// Obtain final colour by interpolating between T1 and T2
 			R = (unsigned char)((dy*RT2)+((one_minus_dy)*RT1));
 			G = (unsigned char)((dy*GT2)+((one_minus_dy)*GT1));
@@ -234,7 +252,8 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 			*(dst + pixel_offset) = R;
 			*(dst + pixel_offset + 1) = G;
 			*(dst + pixel_offset + 2) = B;
-			y++;
+			old_ffy = ffy;
+			old_cfy = cfy;
 			/*
 			fy = y*step_y;
 			// CHANGE 4: declared these variables in the loop rather than at the start of the
