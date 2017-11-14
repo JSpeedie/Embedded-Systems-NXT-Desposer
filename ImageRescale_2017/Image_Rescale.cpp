@@ -184,19 +184,19 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 			// CHANGE 9: Only recalculated x interpolations if in a new pixel
 			//     in the y. Massive speed increase here.
 			// If the point is in a new pixel
-			if (ffy != old_ffy || cfy != old_cfy) {
+			if (!(ffy == old_ffy && cfy == old_cfy)) {
 				// CHANGE 10: Strength Reduction to these calculations
 				//           replacing '((cfx + ffy_loc) * 3)' with
 				//           'cfx + ffy_loc + cfx + ffy_loc + cfx + ffy_loc'
 				src_ffx_cfy_loc = src + (ffx + cfy_loc + ffx + cfy_loc + ffx + cfy_loc);
 				src_cfx_cfy_loc = src + (cfx + cfy_loc + cfx + cfy_loc + cfx + cfy_loc);
-				// CHANGE 13: Stored '1-dx' and '1-dy' in a local variables
+				// CHANGE 11: Stored '1-dx' and '1-dy' in a local variables
 				//            to save on recalculation
 				double one_minus_dx = 1 - dx;
-				// CHANGE 11: removed unnecessary '+0's
-				// CHANGE 12: Inlined getPixel calls
+				// CHANGE 12: removed unnecessary '+0's
+				// CHANGE 13: Inlined getPixel calls
 				// from 'getPixel(src, ffx, ffy, src_x, &R1, &G1, &B1)' to...
-				// CHANGE 17: If the interpolation between N3, N4 for the y-1th
+				// CHANGE 14: If the interpolation between N3, N4 for the y-1th
 				//            pixel has already been calculated, reuse that
 				//            data as the interpolation between N1, N2 for the
 				//            yth pixel. Noticeable improvement.
@@ -231,15 +231,15 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 
 			double one_minus_dy = 1 - dy;
 			// Store the final colour
-			// CHANGE 14: Stored 'y*dest_x' in local var to avoid recalculation
+			// CHANGE 15: Stored 'y*dest_x' in local var to avoid recalculation
 			int y_dest_x = y*dest_x;
-			// CHANGE 15: Applied Strength Reduction to 'pixel_offset'
+			// CHANGE 16: Applied Strength Reduction to 'pixel_offset'
 			//            calculation.
 			int pixel_offset = x + (y_dest_x) + x + (y_dest_x) + x + (y_dest_x);
 			// Obtain final colour by interpolating between T1 and T2
-			// CHANGE 18: Skipped storing result of T1,T2 interpolation and
+			// CHANGE 17: Skipped storing result of T1,T2 interpolation and
 			//            changed the dest image directly.
-			// CHANGE 16: Inlined setPixel calls from
+			// CHANGE 18: Inlined setPixel calls from
 			// 'setPixel(dst,x,y,dest_x,R,G,B)' to...
 			*(dst + pixel_offset) = (unsigned char)((dy*RT2)+((one_minus_dy)*RT1));
 			*(dst + pixel_offset + 1) = (unsigned char)((dy*GT2)+((one_minus_dy)*GT1));
