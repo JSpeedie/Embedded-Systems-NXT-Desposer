@@ -132,6 +132,7 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 {
 	// TODO:
 	// Check if loop unroll is safe (check for %2 and %3)
+	// reuse 2 calcs
 
 	// CHANGE 7: Reordered these variables so the most used were declared first
 	//     avg=1.2782
@@ -148,10 +149,12 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 	step_x=(double)(src_x-1)/(double)(dest_x-1);
 	step_y=(double)(src_y-1)/(double)(dest_y-1);
 
+	//if (dest_x % 10) {
+
 	// Loop over destination image
 	for (int x = 0; x < dest_x; x++) {
 		// CHANGE 5: declared variables relative to the x only in the x section of the loop
-		double fx=x*step_x;
+		double fx = x*step_x;
 		double dx=fx-(int)fx;
 		// CHANGE 11: Declared variables relative to x in the x section of the loop
 		//     avg=1.2882
@@ -161,11 +164,16 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 		int cfx = ceil(fx);*/
 		int ffx = (int)(fx + 32768.) - 32768; // flooring
 		int cfx = 32768 - (int)(32768. - fx); // ceiling
+		// CHANGE 19: avoided multiplication by adding to fy each iteration
+		//double fy = -step_y;
+		//double fy = 0;
 
-		for (int y = 0; y < dest_y;) {
+		//int y = dest_y - 1;
+		//while (y >= 0) {
+		for (int y = 0; y < dest_y/4;) {
+			double fy = y*step_y;
 			// CHANGE 4: declared these variables in the loop rather than at the start of the
 			//           function
-			double fy=y*step_y;
 			double dy=fy-(int)fy;
 			// CHANGE 3: Saved calculations used in inlined-getPixel in local vars to avoid
 			//         Recalculation.
@@ -219,11 +227,78 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 			// CHANGE 9: Stored calculations in local vars to avoid recalculation
 			// CHANGE 10: Applied Strength Reduction to local var calculation
 			//     avg=1.2818
-			int pixel_offset = x + (y*dest_x) + x + (y*dest_x) + x + (y*dest_x);
+			int y_dest_x = y*dest_x;
+			// CHANGE 18: Stored 'y*dest_x' in a local variable to save on recalculation
+			int pixel_offset = x + (y_dest_x) + x + (y_dest_x) + x + (y_dest_x);
 			*(dst + pixel_offset) = R;
 			*(dst + pixel_offset + 1) = G;
 			*(dst + pixel_offset + 2) = B;
 			y++;
+			/*
+			fy = y*step_y;
+			// CHANGE 4: declared these variables in the loop rather than at the start of the
+			//           function
+			dy=fy-(int)fy;
+			// CHANGE 3: Saved calculations used in inlined-getPixel in local vars to avoid
+			//         Recalculation.
+			// CHANGE 14: Used faster floor and ceiling methods
+			//int ffy_loc = (((int) floor(fy))*src_x);
+			//int cfy_loc = (((int) ceil(fy))*src_x);
+			ffy_loc = ((int)(fy + 32768.) - 32768) * src_x; // flooring
+			cfy_loc = (32768 - (int)(32768. - fy)) * src_x; // ceiling
+			// CHANGE 6: Strength Reduction to these calculations  replacing '((cfx + ffy_loc) * 3)'
+			//           with 'cfx + ffy_loc + cfx + ffy_loc + cfx + ffy_loc'
+			//     avg=1.2774
+			src_ffx_ffy_loc = src + (ffx + ffy_loc + ffx + ffy_loc + ffx + ffy_loc);
+			src_cfx_ffy_loc = src + (cfx + ffy_loc + cfx + ffy_loc + cfx + ffy_loc);
+			src_ffx_cfy_loc = src + (ffx + cfy_loc + ffx + cfy_loc + ffx + cfy_loc);
+			src_cfx_cfy_loc = src + (cfx + cfy_loc + cfx + cfy_loc + cfx + cfy_loc);
+			// CHANGE 2: Inlined getPixel calls
+			//getPixel(src, ffx, ffy, src_x, &R1, &G1, &B1);	// get N1 colours
+			// CHANGE 16: removed unnecessary +0
+			// CHANGE 18: Reuse already calculated variables in unroll
+			R1 = R3;
+			G1 = R3;
+			B1 = B3;
+			//getPixel(src, cfx, ffy, src_x, &R2, &G2, &B2);	// get N2 colours
+			R2 = R4;
+			G2 = G4;
+			B2 = B4;
+			//getPixel(src, ffx, cfy, src_x, &R3, &G3, &B3);	// get N3 colours
+			R3 = *(src_ffx_cfy_loc);
+			G3 = *(src_ffx_cfy_loc+1);
+			B3 = *(src_ffx_cfy_loc+2);
+			//getPixel(src, cfx, cfy, src_x, &R4, &G4, &B4);	// get N4 colours
+			R4 = *(src_cfx_cfy_loc);
+			G4 = *(src_cfx_cfy_loc+1);
+			B4 = *(src_cfx_cfy_loc+2);
+			// Interpolate to get T1 and T2 colours
+			// CHANGE 17: Stored '1-dx' and '1-dy' in a local variables to save on recalculation
+			one_minus_dx = 1 - dx;
+			one_minus_dy = 1 - dy;
+			RT1 = (dx*R2)+(one_minus_dx)*R1;
+			GT1 = (dx*G2)+(one_minus_dx)*G1;
+			BT1 = (dx*B2)+(one_minus_dx)*B1;
+			RT2 = (dx*R4)+(one_minus_dx)*R3;
+			GT2 = (dx*G4)+(one_minus_dx)*G3;
+			BT2 = (dx*B4)+(one_minus_dx)*B3;
+			// Obtain final colour by interpolating between T1 and T2
+			R = (unsigned char)((dy*RT2)+((one_minus_dy)*RT1));
+			G = (unsigned char)((dy*GT2)+((one_minus_dy)*GT1));
+			B = (unsigned char)((dy*BT2)+((one_minus_dy)*BT1));
+			// Store the final colour
+			// CHANGE 8: Inlined setPixel calls
+			//setPixel(dst,x,y,dest_x,R,G,B);
+			// CHANGE 9: Stored calculations in local vars to avoid recalculation
+			// CHANGE 10: Applied Strength Reduction to local var calculation
+			//     avg=1.2818
+			y_dest_x = y*dest_x;
+			// CHANGE 18: Stored 'y*dest_x' in a local variable to save on recalculation
+			pixel_offset = x + (y_dest_x) + x + (y_dest_x) + x + (y_dest_x);
+			*(dst + pixel_offset) = R;
+			*(dst + pixel_offset + 1) = G;
+			*(dst + pixel_offset + 2) = B;
+			y++;*/
 		}
 	}
 	return(dst);
