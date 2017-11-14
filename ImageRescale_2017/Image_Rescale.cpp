@@ -195,12 +195,23 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 				// CHANGE 11: removed unnecessary '+0's
 				// CHANGE 12: Inlined getPixel calls
 				// from 'getPixel(src, ffx, ffy, src_x, &R1, &G1, &B1)' to...
-				R1 = *(src_ffx_ffy_loc);
-				G1 = *(src_ffx_ffy_loc+1);
-				B1 = *(src_ffx_ffy_loc+2);
-				R2 = *(src_cfx_ffy_loc);
-				G2 = *(src_cfx_ffy_loc+1);
-				B2 = *(src_cfx_ffy_loc+2);
+				// CHANGE 17: If N3, N4 for the y-1 pixel were
+				//            already calculated, reuse that data as
+				//            N1, N2 for the yth pixel. Noticeable improvement.
+				R1 = R3;
+				G1 = G3;
+				B1 = B3;
+				R2 = R4;
+				G2 = G4;
+				B2 = B4;
+				if (y == 0) {
+					R1 = *(src_ffx_ffy_loc);
+					G1 = *(src_ffx_ffy_loc+1);
+					B1 = *(src_ffx_ffy_loc+2);
+					R2 = *(src_cfx_ffy_loc);
+					G2 = *(src_cfx_ffy_loc+1);
+					B2 = *(src_cfx_ffy_loc+2);
+				}
 				R3 = *(src_ffx_cfy_loc);
 				G3 = *(src_ffx_cfy_loc+1);
 				B3 = *(src_ffx_cfy_loc+2);
