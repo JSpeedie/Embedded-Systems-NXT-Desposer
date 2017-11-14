@@ -130,10 +130,6 @@ void imageOutput(unsigned char *im, int sx, int sy, const char *name);
 
 unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int dest_x, int dest_y)
 {
-	// TODO:
-	// Check if loop unroll is safe (check for %2 and %3)
-	// reuse 2 calcs
-
 	// CHANGE 1: Reordered these variables so the most used were declared
 	//           first and variables of the same type were declared together.
 	// CHANGE 2: Declared these with the register keyword since they are used often
@@ -146,9 +142,6 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 
 	step_x=(double)(src_x-1)/(double)(dest_x-1);
 	step_y=(double)(src_y-1)/(double)(dest_y-1);
-
-	// TODO use this in y loop potentially
-	//if (dest_x % 10) {
 
 	for (int x = 0; x < dest_x; x++) {
 		// CHANGE 3: Loop Hoisting: Declared variables relative to x in the
