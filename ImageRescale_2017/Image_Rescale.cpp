@@ -143,7 +143,7 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 	unsigned char *dst;			// Destination image - must be allocated here!
 
 	// CHANGE 15: used malloc instead of calloc since it is not necessary to clear the mem
-	dst=(unsigned char *)malloc(dest_x*dest_y*3);   // Allocate and clear destination image
+	dst=(unsigned char *)calloc(dest_x*dest_y*3, sizeof(unsigned char));   // Allocate and clear destination image
 	if (!dst) return(NULL);					       // Unable to allocate image
 
 	step_x=(double)(src_x-1)/(double)(dest_x-1);
@@ -170,7 +170,7 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 
 		//int y = dest_y - 1;
 		//while (y >= 0) {
-		for (int y = 0; y < dest_y/4;) {
+		for (int y = 0; y < dest_y;) {
 			double fy = y*step_y;
 			// CHANGE 4: declared these variables in the loop rather than at the start of the
 			//           function
@@ -217,6 +217,7 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 			double RT2 = (dx*R4)+(one_minus_dx)*R3;
 			double GT2 = (dx*G4)+(one_minus_dx)*G3;
 			double BT2 = (dx*B4)+(one_minus_dx)*B3;
+			printf("RT1=%lf GT1=%lf BT1=%lf RT2=%lf GT2=%lf BT2=%lf\n", RT1, BT1, GT1, RT2, BT2, GT2);
 			// Obtain final colour by interpolating between T1 and T2
 			R = (unsigned char)((dy*RT2)+((one_minus_dy)*RT1));
 			G = (unsigned char)((dy*GT2)+((one_minus_dy)*GT1));
