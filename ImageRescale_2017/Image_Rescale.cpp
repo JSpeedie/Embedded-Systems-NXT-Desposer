@@ -137,7 +137,7 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 	// CHANGE 1: Reordered these variables so the most used were declared
 	//           first and variables of the same type were declared together.
 	// CHANGE 2: Declared these with the register keyword since they are used often
-	register unsigned char R1,R2,R3,R4,G1,G2,G3,G4,B1,B2,B3,B4,R,G,B;
+	register unsigned char R1,R2,R3,R4,G1,G2,G3,G4,B1,B2,B3,B4;
 	double step_x,step_y;
 	unsigned char *dst;			// Destination image - must be allocated here!
 
@@ -230,23 +230,20 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 			}
 
 			double one_minus_dy = 1 - dy;
-			// Obtain final colour by interpolating between T1 and T2
-			// TODO skip assigning these to variables and just go straight
-			// to storing the result
-			R = (unsigned char)((dy*RT2)+((one_minus_dy)*RT1));
-			G = (unsigned char)((dy*GT2)+((one_minus_dy)*GT1));
-			B = (unsigned char)((dy*BT2)+((one_minus_dy)*BT1));
 			// Store the final colour
 			// CHANGE 14: Stored 'y*dest_x' in local var to avoid recalculation
 			int y_dest_x = y*dest_x;
 			// CHANGE 15: Applied Strength Reduction to 'pixel_offset'
 			//            calculation.
 			int pixel_offset = x + (y_dest_x) + x + (y_dest_x) + x + (y_dest_x);
+			// Obtain final colour by interpolating between T1 and T2
+			// CHANGE 18: Skipped storing result of T1,T2 interpolation and
+			//            changed the dest image directly.
 			// CHANGE 16: Inlined setPixel calls from
 			// 'setPixel(dst,x,y,dest_x,R,G,B)' to...
-			*(dst + pixel_offset) = R;
-			*(dst + pixel_offset + 1) = G;
-			*(dst + pixel_offset + 2) = B;
+			*(dst + pixel_offset) = (unsigned char)((dy*RT2)+((one_minus_dy)*RT1));
+			*(dst + pixel_offset + 1) = (unsigned char)((dy*GT2)+((one_minus_dy)*GT1));
+			*(dst + pixel_offset + 2) = (unsigned char)((dy*BT2)+((one_minus_dy)*BT1));
 			old_ffy = ffy;
 			old_cfy = cfy;
 		}
