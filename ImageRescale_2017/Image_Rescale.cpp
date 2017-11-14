@@ -188,29 +188,34 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 				// CHANGE 10: Strength Reduction to these calculations
 				//           replacing '((cfx + ffy_loc) * 3)' with
 				//           'cfx + ffy_loc + cfx + ffy_loc + cfx + ffy_loc'
-				src_ffx_ffy_loc = src + (ffx + ffy_loc + ffx + ffy_loc + ffx + ffy_loc);
-				src_cfx_ffy_loc = src + (cfx + ffy_loc + cfx + ffy_loc + cfx + ffy_loc);
 				src_ffx_cfy_loc = src + (ffx + cfy_loc + ffx + cfy_loc + ffx + cfy_loc);
 				src_cfx_cfy_loc = src + (cfx + cfy_loc + cfx + cfy_loc + cfx + cfy_loc);
+				// CHANGE 13: Stored '1-dx' and '1-dy' in a local variables
+				//            to save on recalculation
+				double one_minus_dx = 1 - dx;
 				// CHANGE 11: removed unnecessary '+0's
 				// CHANGE 12: Inlined getPixel calls
 				// from 'getPixel(src, ffx, ffy, src_x, &R1, &G1, &B1)' to...
-				// CHANGE 17: If N3, N4 for the y-1 pixel were
-				//            already calculated, reuse that data as
-				//            N1, N2 for the yth pixel. Noticeable improvement.
-				R1 = R3;
-				G1 = G3;
-				B1 = B3;
-				R2 = R4;
-				G2 = G4;
-				B2 = B4;
+				// CHANGE 17: If the interpolation between N3, N4 for the y-1th
+				//            pixel has already been calculated, reuse that
+				//            data as the interpolation between N1, N2 for the
+				//            yth pixel. Noticeable improvement.
+				RT1 = RT2;
+				GT1 = GT2;
+				BT1 = BT2;
 				if (y == 0) {
+					src_ffx_ffy_loc = src + (ffx + ffy_loc + ffx + ffy_loc + ffx + ffy_loc);
+					src_cfx_ffy_loc = src + (cfx + ffy_loc + cfx + ffy_loc + cfx + ffy_loc);
 					R1 = *(src_ffx_ffy_loc);
 					G1 = *(src_ffx_ffy_loc+1);
 					B1 = *(src_ffx_ffy_loc+2);
 					R2 = *(src_cfx_ffy_loc);
 					G2 = *(src_cfx_ffy_loc+1);
 					B2 = *(src_cfx_ffy_loc+2);
+					// Interpolate to get T1 colours
+					RT1 = (dx*R2)+(one_minus_dx)*R1;
+					GT1 = (dx*G2)+(one_minus_dx)*G1;
+					BT1 = (dx*B2)+(one_minus_dx)*B1;
 				}
 				R3 = *(src_ffx_cfy_loc);
 				G3 = *(src_ffx_cfy_loc+1);
@@ -218,13 +223,7 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 				R4 = *(src_cfx_cfy_loc);
 				G4 = *(src_cfx_cfy_loc+1);
 				B4 = *(src_cfx_cfy_loc+2);
-				// Interpolate to get T1 and T2 colours
-				// CHANGE 13: Stored '1-dx' and '1-dy' in a local variables
-				//            to save on recalculation
-				double one_minus_dx = 1 - dx;
-				RT1 = (dx*R2)+(one_minus_dx)*R1;
-				GT1 = (dx*G2)+(one_minus_dx)*G1;
-				BT1 = (dx*B2)+(one_minus_dx)*B1;
+				// Interpolate to get T2 colours
 				RT2 = (dx*R4)+(one_minus_dx)*R3;
 				GT2 = (dx*G4)+(one_minus_dx)*G3;
 				BT2 = (dx*B4)+(one_minus_dx)*B3;
@@ -232,6 +231,8 @@ unsigned char *fast_rescaleImage(unsigned char *src, int src_x, int src_y, int d
 
 			double one_minus_dy = 1 - dy;
 			// Obtain final colour by interpolating between T1 and T2
+			// TODO skip assigning these to variables and just go straight
+			// to storing the result
 			R = (unsigned char)((dy*RT2)+((one_minus_dy)*RT1));
 			G = (unsigned char)((dy*GT2)+((one_minus_dy)*GT1));
 			B = (unsigned char)((dy*BT2)+((one_minus_dy)*BT1));
