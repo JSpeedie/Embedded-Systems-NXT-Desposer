@@ -41,7 +41,7 @@ struct AI_data{
 				// side=1 implies the robot's own side is the right side
 				// This is set based on the robot's initial position
 				// on the field
-        int botCol;		// Own bot's colour. 0 - green, 1 - red
+  int botCol;		// Own bot's colour. 0 - green, 1 - red
 
 	int state;		// Current AI state
 
@@ -68,7 +68,7 @@ struct AI_data{
 	double bmx,bmy;			// Ball heading
 
 	// Self track data. Done separately each frame
-        struct blob *self;		// Current self blob
+  struct blob *self;		// Current self blob
 	double old_scx, old_scy;	// Previous self (cx,cy)
 	double svx,svy;			// Current self [vx vy]
 	double smx,smy;			// Self heading
