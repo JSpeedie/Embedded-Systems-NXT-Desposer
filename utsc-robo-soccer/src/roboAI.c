@@ -491,6 +491,11 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
    state transitions and with calling the appropriate function based on what
    the bot is supposed to be doing.
   *****************************************************************************/
+
+	if(ai->st.state == 101) {
+					drive(40);
+					printf("WE ARE IN THE LOOP THAT WE WROTE\n");
+	}
   fprintf(stderr,"Just trackin'!\n");	// bot, opponent, and ball.
   track_agents(ai,blobs);		// Currently, does nothing but endlessly track
  }
