@@ -1,17 +1,16 @@
 CSC C85 - Lab 3 - Code Optimization
 _______________________________________________________________________
 
-Team name:
+Team name: Speed of Darkness
 
-Name 1 (last, first):
-Student number 1:
+Name 1 (last, first): Balakrishnan, Krisanthan
+Student number 1: 999468366
 
-Name 2 (last, first):
-Student number 2:
+Name 2 (last, first): Soltan, Vadim
+Student number 2: 1002433342
 
-If applicable:
-Name 3 (last, first):
-Student number 3:
+Name 3 (last, first): Speedie, Julian
+Student number 3: 1001712952
 
 (Special: Lose marks for failing to complete the above)
 _______________________________________________________________________
@@ -21,22 +20,23 @@ Questions:
 0) On the same computer, and with no other applications open:
 
    - Run vanilla version, compiled as per the compile script (no compiler
-     optimization) and list: Vanilla (no compiler opt) FPS = 
+     optimization) and list: Vanilla (no compiler opt) FPS = 0.250000
      
    - Run your optimized code, compiled without compiler optimization
-     and list: Your Code (no compiler opt) FPS =
+     and list: Your Code (no compiler opt) FPS = 8.000000
 
    - Run vanilla code compiled with flag -O3 for compiler optimization
-     and list: Vanilla (compiler optimized) FPS =
+     and list: Vanilla (compiler optimized) FPS = 1.200000
      
    - Run your optimized code, compiled with flag -O3
-     and list: Your Code (compiler optimized) FPS =
+     and list: Your Code (compiler optimized) FPS = 4.333333
      
      What is the ratio of your code (compiler optimized) to vanilla
      with no compiler optimization?
      
      Ratio = Vanilla(no compiler opt) FPS / Your code(compiler optimized) FPS
-           =
+           = 4.333333 / 0.250000
+	   = 17.33333
      
 a) Look at the profiler output for vanilla_imageRescale(). Identify the
    lines that you think are un-necessary bottlenecks (i.e. lines whose
@@ -48,29 +48,79 @@ a) Look at the profiler output for vanilla_imageRescale(). Identify the
 	- The amount of time taken
 	(you can copy/paste from the profiler output)
 
+   Lines 408-411 runs the function getPixel 41,472,000 times.
+   These same lines also call the ceiling and floor functions the same amount of times.
+   Line 424 calls setPixel which gets called 10,368,000 times. 
+
    For each line, explain why the line creates a bottleneck (in terms
    of what you know about CPU architecture). I want specific reasons
    why a line you listed takes a large chunk of CPU time.
+
+   Lines 408-411 create a bottleneck by calling the same function multiple times in a nested
+   	for loop, which causes the CPU to have to call the function, perform its operations,
+	and return the value repeatedly in that nested for loop.
+   Lines 408-411 also call the ceiling and floor functions multiple times, and our research
+	into optimzing C code showed that these functions were implemented with poor runtime 
+	performance.
+   Line 424 is slow because it gets called in the nested for loop and it requires a call to 
+	another function, which also has to be called repeatedly in the loop.
 
 b) For each of the lines in a)
 
    Describe what you did in fast_imageRescale() to reduce/resolve the
    problem.
+	For lines 408-411, we inlined the function instead of calling getPixel. 
+	For the floor/ceiling functions, we replaced them with a faster version of floor/ceiling
+		(see resources at bottom).
+	For line 424, we did the same thing as getPixel (i.e. we inlined the function in the loop
+		itself).	
 
    Explain why your improvement should work (again, based on what you
    know about CPU architecture).
+	For lines 408-411, performing the operations in the loop itself allows the CPU to avoid calling the 
+		function getPixel, which takes computation time.  Calling the function, and getting its return
+		value is slower than just getting the value in the loop itself.
+	For the floor/ceiling functions, instead of calling a function in C that does the rounding, we do the rounding
+		ourselves in the loop.  This saves a function call, and because the floor/ceiling functions are slow, 
+		we save time everytime we avoid calling them.
+	For line 424, the same logic from lines 462-465 apply, why call a function to set values (which takes computation
+		time) when we can just save the values in the loop itself?
 
 c) List any other optimizations you performed in your code and why they
    help increase speed
+	
+	We moved any operations that only involve x values to the outer loop of the nested for loops, this way
+		instead of doing those operations x*y times, we did them x times.
+	We also changed how we calculate the x interpolation, so that if there wasn't a 
+		new pixel in y we didn't recalculate everything, which saved a lot of time.
+	There were also many variables that we moved to be local variables so that we didn't have to
+		recalculate them every loop, and we used strength reduction on some
+		operations.
+	When we move to a new pixel, the N3/N4 are the same as the N1/N2 of the next pixel, therefore
+		we can reuse them.
 
 d) Is there any part of the vanilla code that could not be optimized
    at all? if so, which?
+	Obtaining the final RGB values was difficult to optimize as that step
+		is necessary and the operations performed in it could not be
+		reduced any further.
 
 e) Do you think you have achieved close to optimal performance on this
    code? (yes/no)
+	Mostly yes, there might be some other minor optimizations but they would save
+		minimal time.
 
 f) If your answer to d) is no, what could you do to further increase
    performance?
+	Redesigining the whole way the interpolation is done might save time, but this
+		requires compleletely rewriting the function and coming up with
+		a new interpolation technique.
+
+RESOURCES: 
+	https://en.wikibooks.org/wiki/Optimizing_C%2B%2B/Code_optimization/Faster_operations
+	http://leto.net/docs/C-optimization.php
+	https://www.codeproject.com/Tips/700780/Fast-floor-ceiling-functions.
+	http://www.cs.utoronto.ca/~strider/c85/
 
 ______________________________________________________________________
 

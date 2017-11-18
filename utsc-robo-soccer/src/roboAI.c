@@ -491,10 +491,34 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
    state transitions and with calling the appropriate function based on what
    the bot is supposed to be doing.
   *****************************************************************************/
-
 	if(ai->st.state == 101) {
-					drive(40);
-					printf("WE ARE IN THE LOOP THAT WE WROTE\n");
+		track_agents(ai, blobs);
+		double x_pos;
+		double y_pos;
+		if(ai->st.ball != NULL) {
+			x_pos = fabs(ai->st.old_scx - ai->st.old_bcx); 		// Update old position for next frame's computation
+  			y_pos = fabs(ai->st.old_scy - ai->st.old_bcy);
+		}
+		printf("x_pos = %lf y_pos = %lf\n", x_pos, y_pos);
+		printf("ballX = %lf\n", ai->st.old_bcx);
+		printf("ballY = %lf\n", ai->st.old_bcy);
+		printf("selfX = %lf\n", ai->st.old_scx);
+		printf("selfy = %lf\n", ai->st.old_scy);
+		//pivot_left();
+		if(ai->st.smx <= 0.100 && ai->st.smx >= 0.0 ){
+			ai->st.state = 102;
+		} else {
+			//turn_left();
+		}
+		printf("selfXHeading = %lf\n", ai->st.smx);
+		printf("selfyHeading = %lf\n", ai->st.smy);
+		
+		printf("ballXHeading = %lf\n", ai->st.bmx);
+		printf("ballYHeading = %lf\n", ai->st.bmy);
+		//ai->st.state = 102;
+	}
+	if(ai->st.state == 102) {
+		all_stop();
 	}
   fprintf(stderr,"Just trackin'!\n");	// bot, opponent, and ball.
   track_agents(ai,blobs);		// Currently, does nothing but endlessly track
