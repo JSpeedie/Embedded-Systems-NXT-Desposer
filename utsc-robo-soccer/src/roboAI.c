@@ -311,7 +311,7 @@ void id_bot(struct RoboAI *ai, struct blob *blobs)
  static double stepID=0;
  double frame_inc=1.0/5.0;
 
- drive_speed(30);			// Start forward motion to establish heading
+ //drive_speed(30);			// Start forward motion to establish heading
 					// Will move for a few frames.
 
  track_agents(ai,blobs);		// Call the tracking function to find each agent
@@ -492,34 +492,100 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
    the bot is supposed to be doing.
   *****************************************************************************/
 	if(ai->st.state == 101) {
-		track_agents(ai, blobs);
+		printf("We are in state 101\n");
+		int old_bcy = old_bcy = ai->st.old_bcy; // old y position of the ball
+                int old_scy = ai->st.old_scy; // old y position of the robot
+		int old_bcx = old_bcx = ai->st.old_bcx; // old x position of the ball
+                int old_scx = ai->st.old_scx; // old x position of the robot
+		//turn_90_deg();
 		double x_pos;
 		double y_pos;
+		// calculate the distance in x and y from the robot to the ball
 		if(ai->st.ball != NULL) {
-			x_pos = fabs(ai->st.old_scx - ai->st.old_bcx); 		// Update old position for next frame's computation
+			x_pos = fabs(ai->st.old_scx - ai->st.old_bcx); 
   			y_pos = fabs(ai->st.old_scy - ai->st.old_bcy);
 		}
-		printf("x_pos = %lf y_pos = %lf\n", x_pos, y_pos);
-		printf("ballX = %lf\n", ai->st.old_bcx);
-		printf("ballY = %lf\n", ai->st.old_bcy);
-		printf("selfX = %lf\n", ai->st.old_scx);
-		printf("selfy = %lf\n", ai->st.old_scy);
-		//pivot_left();
-		if(ai->st.smx <= 0.100 && ai->st.smx >= 0.0 ){
-			ai->st.state = 102;
-		} else {
-			//turn_left();
-		}
-		printf("selfXHeading = %lf\n", ai->st.smx);
-		printf("selfyHeading = %lf\n", ai->st.smy);
-		
-		printf("ballXHeading = %lf\n", ai->st.bmx);
-		printf("ballYHeading = %lf\n", ai->st.bmy);
-		//ai->st.state = 102;
+		ai->st.state ++;
 	}
-	if(ai->st.state == 102) {
+	if(ai->st.state == 102){
+	printf("We are in state 102\n");
+		int old_bcy = old_bcy = ai->st.old_bcy; // old y position of the ball
+                int old_scy = ai->st.old_scy; // old y position of the robot
+		int old_bcx = old_bcx = ai->st.old_bcx; // old x position of the ball
+                int old_scx = ai->st.old_scx; // old x position of the robot
+		// the robot is to the right of the ball
+		if(ai->st.old_scx > old_bcy){
+		turn_90_deg(0);
+		// the robot is to the left of the ball
+		} else {
+			turn_90_deg(1);
+		}
+		ai->st.state ++;
+	}
+
+	if(ai->st.state == 103) {
+		printf("old x position %lf\n", ai->st.old_scx);
+
+		printf("old ball x position %lfn", ai->st.old_bcx);
+
+		printf("We are in state 103\n");
+
+		int distance  = fabs(ai->st.old_bcx - ai->st.old_scx);
+		// to the right of the ball in the x direction
+		if(ai->st.old_scx < ai->st.old_bcx + 100){
+			printf("less than ball\n");
+			keep_driving(distance);
+			// drive();
+			// ai->st.state++;
+		}
+		// to the left of the ball in the x direction
+		if(ai->st.old_scx > ai->st.old_bcx){
+			keep_driving(distance);
+			printf("greater than ball\n");
+			//drive();
+		}
+
+		ai->st.state++;
+		printf("current x position %lf\n", ai->st.old_scx);
+
+		printf("current ball x position %lf\n", ai->st.old_bcx);
+	}
+	if(ai->st.state == 104) {
+		printf("We are in state 104\n");
+
+		// if the robot is behind the ball go towards the ball
+	
+			drive();
+			//printf("%lf\n", old_bcy);
+			// if we're past the ball, reverse until we're parallel to the ball
+			if(ai->st.old_bcy < ai->st.old_scy){
+			        printf("reversing");
+			        reverse();
+			}
+			// if we're behind the ball, drive until we're parellel to the ball
+			if(ai->st.old_bcy > ai->st.old_scy){
+			        drive();
+			}
+		// if the robot is in front of the ball go towards the ball
+		if(ai->st.old_scy > ai->st.old_bcy){
+		        drive();
+		        // if we're past the ball, reverse until we're parallel to the ball
+		        if(ai->st.old_bcy < ai->st.old_scy){
+		                printf("reversing");
+		                reverse();
+		        }
+		        // if we're behind the ball, drive until we're parellel to the ball
+		        if(ai->st.old_bcy > ai->st.old_scy){
+		                drive();
+				}
+		}
+		ai->st.state ++;
+	}
+
+	if(ai->st.state == 105) {
 		all_stop();
 	}
+
   fprintf(stderr,"Just trackin'!\n");	// bot, opponent, and ball.
   track_agents(ai,blobs);		// Currently, does nothing but endlessly track
  }
@@ -541,3 +607,24 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 **********************************************************************************/
 
 
+void turn_90_deg(int direction){ // left = 0, right = 1
+	double time = 0.5;
+	while(time < 9.5){
+		if(!direction){
+			turn_left();
+		} else if (direction){
+			turn_right();
+		}
+		time += 0.98;
+	}
+	all_stop();
+	return;
+}
+
+void keep_driving(int distance) {
+	double counter = 0;
+	while(counter < distance) {
+		drive();
+		counter += 45;
+	}
+}
