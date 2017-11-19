@@ -460,7 +460,8 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 
  if (ai->st.state==0||ai->st.state==100||ai->st.state==200)  	// Initial set up - find own, ball, and opponent blobs
  {
-  // Carry out self id process.
+  // Carry            
+  //  40                                                                    out self id process.
   fprintf(stderr,"Initial state, self-id in progress...\n");
   id_bot(ai,blobs);
   if ((ai->st.state%100)!=0)	// The id_bot() routine will change the AI state to initial state + 1
@@ -502,28 +503,42 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 		double y_pos;
 		// calculate the distance in x and y from the robot to the ball
 		if(ai->st.ball != NULL) {
-			x_pos = fabs(ai->st.old_scx - ai->st.old_bcx); 
+			x_pos = fabs(ai->st.old_scx - ai->st.old_bcx);
   			y_pos = fabs(ai->st.old_scy - ai->st.old_bcy);
 		}
 		ai->st.state ++;
 	}
 	if(ai->st.state == 102){
 	printf("We are in state 102\n");
-		int old_bcy = old_bcy = ai->st.old_bcy; // old y position of the ball
-                int old_scy = ai->st.old_scy; // old y position of the robot
-		int old_bcx = old_bcx = ai->st.old_bcx; // old x position of the ball
-                int old_scx = ai->st.old_scx; // old x position of the robot
-		// the robot is to the right of the ball
-		if(ai->st.old_scx > old_bcy){
-		turn_90_deg(0);
-		// the robot is to the left of the ball
+		int old_bcy = ai->st.old_bcy; // old y position of the ball
+        int old_scy = ai->st.old_scy; // old y position of the robot
+		int old_bcx = ai->st.old_bcx; // old x position of the ball
+        int old_scx = ai->st.old_scx; // old x position of the robot
+		// if we come from state 103 and we need to turn
+		if(ai->st.old_state != NULL && ai->st.old_state == 103) {
+			// check if we are further than the ball in the y axis
+			if(ai->st.old_scy < old_bcy){
+				turn_90_deg(0);
+			} else {
+				turn_90_deg(1);
+			}
+			ai->st.state += 2;
 		} else {
-			turn_90_deg(1);
+
+			// the robot is to the right of the ball
+			if(ai->st.old_scx > old_bcx){
+				turn_90_deg(0);
+			// the robot is to the left of the ball
+			} else {
+				turn_90_deg(1);
+			}
 		}
+
 		ai->st.state ++;
 	}
 
 	if(ai->st.state == 103) {
+		ai->st.old_state = 103;
 		printf("old x position %lf\n", ai->st.old_scx);
 
 		printf("old ball x position %lfn", ai->st.old_bcx);
@@ -545,7 +560,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 			//drive();
 		}
 
-		ai->st.state++;
+		ai->st.state--;
 		printf("current x position %lf\n", ai->st.old_scx);
 
 		printf("current ball x position %lf\n", ai->st.old_bcx);

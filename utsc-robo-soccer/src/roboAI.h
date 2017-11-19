@@ -35,7 +35,7 @@ struct AI_data{
 	// about its old position, as well as current velocity and heading vectors.
 	//
 	// MIND THE NOISE.
-
+	
 	// Robot's playfield side id (w.r.t. the viepoint of the camera).
 	int side;		// side=0 implies the robot's own side is the left side
 				// side=1 implies the robot's own side is the right side
@@ -44,6 +44,7 @@ struct AI_data{
   int botCol;		// Own bot's colour. 0 - green, 1 - red
 
 	int state;		// Current AI state
+	int old_state; // Old State
 
 	// Motion flags	- ** These should be set by your own code, if you want to  use them **
 	int mv_fwd;		// moving forward
