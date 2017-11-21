@@ -498,6 +498,13 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
                 int old_scy = ai->st.old_scy; // old y position of the robot
 		int old_bcx = old_bcx = ai->st.old_bcx; // old x position of the ball
                 int old_scx = ai->st.old_scx; // old x position of the robot
+		printf("current x position %lf\n", ai->st.old_scx);
+
+		printf("current ball x position %lf\n", ai->st.old_bcx);
+		printf("current y position %lf\n", ai->st.old_scy);
+
+		printf("current ball y position %lf\n", ai->st.old_bcy);
+
 		//turn_90_deg();
 		double x_pos;
 		double y_pos;
@@ -509,34 +516,23 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 		ai->st.state ++;
 	}
 	if(ai->st.state == 102){
-	printf("We are in state 102\n");
+		printf("We are in state 102\n");
 		int old_bcy = ai->st.old_bcy; // old y position of the ball
-        int old_scy = ai->st.old_scy; // old y position of the robot
+		int old_scy = ai->st.old_scy; // old y position of the robot
 		int old_bcx = ai->st.old_bcx; // old x position of the ball
-        int old_scx = ai->st.old_scx; // old x position of the robot
+		int old_scx = ai->st.old_scx; // old x position of the robot
 		// if we come from state 103 and we need to turn
 		if(ai->st.old_state != NULL && ai->st.old_state == 103) {
+			printf("bye");
 			// check if we are further than the ball in the y axis
-			if(ai->st.old_scy < old_bcy){
-				turn_90_deg(0);
-			} else {
-				turn_90_deg(1);
-			}
+			turn_90_deg(ai, 0);
 			ai->st.state += 2;
 		} else {
-
-			// the robot is to the right of the ball
-			if(ai->st.old_scx > old_bcx){
-				turn_90_deg(0);
-			// the robot is to the left of the ball
-			} else {
-				turn_90_deg(1);
-			}
+			printf("hi");
+			turn_90_deg(ai, 1);
 		}
-
-		ai->st.state ++;
+		ai->st.state++;
 	}
-
 	if(ai->st.state == 103) {
 		ai->st.old_state = 103;
 		printf("old x position %lf\n", ai->st.old_scx);
@@ -598,6 +594,12 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 	}
 
 	if(ai->st.state == 105) {
+		kick();
+		sleep(1);
+		retract();
+		ai->st.state++;
+	}
+	if(ai->st.state == 106){
 		all_stop();
 	}
 
@@ -622,15 +624,32 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 **********************************************************************************/
 
 
-void turn_90_deg(int direction){ // left = 0, right = 1
+void turn_90_deg(struct RoboAI *ai, int first){
 	double time = 0.5;
 	while(time < 9.5){
-		if(!direction){
-			turn_left();
-		} else if (direction){
-			turn_right();
+		if(first){
+			if(ai->st.old_scx < ai->st.old_bcx && ai->st.old_scy > ai->st.old_bcy){
+				turn_right();
+				ai->st.old_turn = 1;
+			} else if (ai->st.old_scx < ai->st.old_bcx && ai->st.old_scy < ai->st.old_bcy){
+				turn_left();
+				ai->st.old_turn = 0;
+			} else if (ai->st.old_scx > ai->st.old_bcx && ai->st.old_scy > ai->st.old_bcy){
+				turn_left();
+				ai->st.old_turn = 0;
+			} else if(ai->st.old_scx > ai->st.old_bcx && ai->st.old_scy < ai->st.old_bcy){
+				turn_right();
+				ai->st.old_turn = 1;
+			}
+		} else {
+			if(ai->st.old_turn){
+				turn_left();
+			} else if (ai->st.old_turn == 0){
+				turn_right();
+			}
 		}
 		time += 0.98;
+		printf("time: %lf\n", time);
 	}
 	all_stop();
 	return;
@@ -640,6 +659,7 @@ void keep_driving(int distance) {
 	double counter = 0;
 	while(counter < distance) {
 		drive();
-		counter += 45;
+		counter += 110;
 	}
 }
+

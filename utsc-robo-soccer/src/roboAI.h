@@ -45,6 +45,7 @@ struct AI_data{
 
 	int state;		// Current AI state
 	int old_state; // Old State
+	int old_turn; // our previous turn
 
 	// Motion flags	- ** These should be set by your own code, if you want to  use them **
 	int mv_fwd;		// moving forward
