@@ -663,3 +663,15 @@ void keep_driving(int distance) {
 	}
 }
 
+/*double calculate_angle(struct RoboAI *ai){
+	double angle = atan2(fabs(ai->st.old_bcy - ai->st.old_scy, ai->st.old_bcx - ai->st.old_scx));
+	if(angle > 30 && ai->st.old_bcx > ai->st.old_scx){
+		pivot_left();
+	} else if(angle > 30 && ai->st.old_bcx < ai->st.old_sxc){
+		pivot_right();
+	} else {	
+		// make ball's heading straight to ball
+		keep_driving();
+	}
+}*/
+
