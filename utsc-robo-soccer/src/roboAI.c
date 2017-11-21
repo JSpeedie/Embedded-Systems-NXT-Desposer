@@ -523,12 +523,12 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 		int old_scx = ai->st.old_scx; // old x position of the robot
 		// if we come from state 103 and we need to turn
 		if(ai->st.old_state != NULL && ai->st.old_state == 103) {
-			printf("bye");
 			// check if we are further than the ball in the y axis
 			turn_90_deg(ai, 0);
 			ai->st.state += 2;
+		} else if (old_scx <= old_bcx + 10 && old_scx >= old_bcx - 10) {
+			ai->st.state++;
 		} else {
-			printf("hi");
 			turn_90_deg(ai, 1);
 		}
 		ai->st.state++;
