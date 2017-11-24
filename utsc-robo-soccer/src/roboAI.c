@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define EPS 0.1
+#define EPS 0.05
 
 void clear_motion_flags(struct RoboAI *ai)
 {
@@ -501,7 +501,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
     if(find_ball(ai)) {
       double error = cos_pid(ai);
       // go to next state
-      if(error <= EPS) {
+      if(error <= EPS && error >= 0) {
         ai->st.state ++;
       }
     }
@@ -603,13 +603,13 @@ double *ball_distance_vector(struct RoboAI *ai) {
 double cos_pid(struct RoboAI *ai) {
 
   double epsilon = 0.01;
-  double kp = 5;
-  double kd = 3;
-  double ki = 1;
+  double kp = 18;
+  double kd = 7;
+  double ki = 10;
 
   static double pre_error = 0;
   static double integral = 0;
-  static double time = 0.05;
+  static double time = 0.01;
   double error;
   double derivative;
   double output;
@@ -638,7 +638,7 @@ double cos_pid(struct RoboAI *ai) {
   printf("cos theta: %lf\n", cos_theta);
 
   // Calculate P, I, D
-  error = fabs(1 - cos_theta); // P
+  error = 1 - fabs(cos_theta); // P
 
   // In case of error too small then stop integration
   if(fabs(error) > epsilon) { // I
@@ -650,16 +650,17 @@ double cos_pid(struct RoboAI *ai) {
   output = kp * error + ki * integral + kd * derivative;
   printf("pre-error, error: %lf, %lf\n", pre_error, error);
   pre_error += error;
-  time += 0.05;
+  time += 0.01;
 
   // ideally we would know which way to pivot for maximum efficiency but for now
   // we can just pivot right or left and each time this function is called cos_theta would be updated
   // based on new measurements
 
   int output2 = fabs((int)output);
-  printf("output is: %lf\n", output2);
-  //pivot_left_speed(output2);
-  drive_custom(0, output2);
+  printf("output is: %lf\n", fabs((int)output2));
+  pivot_right_speed(output2 % 100);
+  all_stop();
+  printf("turn and stopped\n");
   return error;
 }
 
