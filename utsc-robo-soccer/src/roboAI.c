@@ -498,15 +498,15 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 		printf("We are in state 101\n");
 
     // if the ball is on the field pivot until direction matches ball
-    if(find_ball) {
+    if(find_ball(ai)) {
       double error = cos_pid(ai);
-    }
-
-    // go to next state
-    if(error < EPS) {
-      ai->st.state ++;
+      // go to next state
+      if(error < EPS) {
+        ai->st.state ++;
+      }
     }
 	}
+
 	if(ai->st.state == 102){
 
     // move robot forward
@@ -570,7 +570,7 @@ int find_ball(struct RoboAI *ai) {
 // dot product calculator
 double dot_product(double v[], double u[], int n) {
     double result = 0.0;
-    for (int i = 0; i < n, i++) {
+    for (int i = 0; i < n; i++) {
       result += v[i] * u[i];
     }
     return result;
@@ -579,7 +579,7 @@ double dot_product(double v[], double u[], int n) {
 // vector magnitude calculator
 double vector_magnitude(double *v, int n) {
   double magnitude = 0.0;
-  for(i = 0; i < n, i++) {
+  for(int i = 0; i < n; i++) {
     magnitude += pow(v[i], 2);
   }
   return magnitude;
@@ -593,8 +593,8 @@ double *ball_distance_vector(struct RoboAI *ai) {
   double bx = ai->st.ball->cx;
   double by = ai->st.ball->cy; 
 
-  double distance[2];
-  distnace[0] = fabs(sx - bx);
+  double *distance =  malloc(sizeof(double) * 2);
+  distance[0] = fabs(sx - bx);
   distance[1] = fabs(sy - by);
   
   return distance;
@@ -610,6 +610,7 @@ double cos_pid(struct RoboAI *ai) {
 
   static double pre_error = 0;
   static double integral = 0;
+  static double time = 0.05;
   double error;
   double derivative;
   double output;
@@ -620,21 +621,21 @@ double cos_pid(struct RoboAI *ai) {
 
   // put the current direction in a vector
   double current_direction_vector[2];
-  current_direction[0] = ai->st.self->dx;
-  current_direction[1] = ai->st.self->dy;
+  current_direction_vector[0] = ai->st.self->dx;
+  current_direction_vector[1] = ai->st.self->dy;
 
   // get the vector for the distance to the ball
-  double distance_vector = ball_distance_vector(ai)
+  double *distance_vector = ball_distance_vector(ai);
 
   // calculate the dot product of the current_direction_vector and the distance_vector
-  double dot_product = dot_product(current_direction_vector, distance_vector, 2);
+  double dot_product_result = dot_product(current_direction_vector, distance_vector, 2);
 
   // calculate the magnitudes of the current_direction_vector and the distance_vector
   double current_direction_vector_mag = vector_magnitude(current_direction_vector, 2);
-  double distance_vector_mag = vector_magnitude(distance_vector, 2)
+  double distance_vector_mag = vector_magnitude(distance_vector, 2);
 
   // calculate cos(theta)
-  cos_theta = dot_product/(current_direction_vector_mag * distance_vector_mag);
+  cos_theta = dot_product_result / (current_direction_vector_mag, distance_vector_mag);
   
 
   // Calculate P, I, D
@@ -649,13 +650,13 @@ double cos_pid(struct RoboAI *ai) {
   
   output = kp * error + ki * integral + kd * derivative;
   pre_error = error;
+  time += 0.05;
 
   // ideally we would know which way to pivot for maximum efficiency but for now
   // we can just pivot right or left and each time this function is called cos_theta would be updated
   // based on new measurements
 
-  pivot_left_speed((int) output)
-
+  pivot_left_speed((int) output);
   return error;
 }
 

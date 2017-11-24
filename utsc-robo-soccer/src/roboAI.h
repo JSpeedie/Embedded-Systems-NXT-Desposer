@@ -134,5 +134,11 @@ void clear_motion_flags(struct RoboAI *ai);
    Add headers for your own functions implementing the bot's soccer
    playing functionality below.
 *****************************************************************************/
+int find_ball(struct RoboAI *ai);
+double dot_product(double v[], double u[], int n);
+double vector_magnitude(double *v, int n);
+double *ball_distance_vector(struct RoboAI *ai);
+double cos_pid(struct RoboAI *ai);
+
 
 #endif
