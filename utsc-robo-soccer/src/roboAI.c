@@ -501,12 +501,11 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
     if(find_ball(ai)) {
       double error = cos_pid(ai);
       // go to next state
-      if(error < EPS) {
+      if(error <= EPS) {
         ai->st.state ++;
       }
     }
 	}
-
 	if(ai->st.state == 102){
 
     // move robot forward
@@ -517,7 +516,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 
       // if not return to last state
 		printf("We are in state 102\n");
-    all_stop();
+    		all_stop();
 		//ai->st.state++;
 	}
 	if(ai->st.state == 104) {
@@ -582,7 +581,7 @@ double vector_magnitude(double *v, int n) {
   for(int i = 0; i < n; i++) {
     magnitude += pow(v[i], 2);
   }
-  return magnitude;
+  return sqrt(magnitude);
 }
 
 // calculate x and y distnace to the ball
@@ -604,9 +603,9 @@ double *ball_distance_vector(struct RoboAI *ai) {
 double cos_pid(struct RoboAI *ai) {
 
   double epsilon = 0.01;
-  double kp = 0;
-  double kd = 0;
-  double ki = 0;
+  double kp = 5;
+  double kd = 3;
+  double ki = 1;
 
   static double pre_error = 0;
   static double integral = 0;
@@ -636,27 +635,31 @@ double cos_pid(struct RoboAI *ai) {
 
   // calculate cos(theta)
   cos_theta = dot_product_result / (current_direction_vector_mag, distance_vector_mag);
-  
+  printf("cos theta: %lf\n", cos_theta);
 
   // Calculate P, I, D
-  error = 1 - cos_theta; // P
+  error = fabs(1 - cos_theta); // P
 
   // In case of error too small then stop integration
   if(fabs(error) > epsilon) { // I
     integral = integral + error * time; // figure out how to get time 
   }
 
-  derivative = (error - pre_error) / time; // D
-  
+  derivative = fabs(error - pre_error) / time; // D
+
   output = kp * error + ki * integral + kd * derivative;
-  pre_error = error;
+  printf("pre-error, error: %lf, %lf\n", pre_error, error);
+  pre_error += error;
   time += 0.05;
 
   // ideally we would know which way to pivot for maximum efficiency but for now
   // we can just pivot right or left and each time this function is called cos_theta would be updated
   // based on new measurements
 
-  pivot_left_speed((int) output);
+  int output2 = fabs((int)output);
+  printf("output is: %lf\n", output2);
+  //pivot_left_speed(output2);
+  drive_custom(0, output2);
   return error;
 }
 
