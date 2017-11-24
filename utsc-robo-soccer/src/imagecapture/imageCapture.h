@@ -63,21 +63,21 @@
 static const char version[] = "RoboSoccer rc1.2.2014";
 
 struct blob{
-        int label;		// Label in the labels image
+    int label;		// Label in the labels image
 	int blobId;		// Unique blobId
 	double cx;		// Current location
-        double cy;		
+    double cy;		
 	double vx;		// [vx, vy] motion vector for the current frame
-        double vy;
-        double mx,my;		// Heading direction - Last non-zero motion direction - unit vector!
+    double vy;
+    double mx,my;		// Heading direction - Last non-zero motion direction - unit vector!
 	double dx,dy;		// Direction vector from blob shape - points in the direction of long axis
 	int size;		// Size in pixels
 	int x1,y1,x2,y2;	// Bounding box (top-left, bottom-right)
 	double R,G,B;		// Average colour of pixels in the blob
-        int age;		// Number of frames the blob has been tracked/not tracked
+    int age;		// Number of frames the blob has been tracked/not tracked
 	int idtype;		// Integer set to the id of this blob: 0->ball, 1->green bot, 2->red bot
 	struct blob *next;	// If needed for linked lists of blobs
-        int updated;		// Update flag - used by the image processing loop - don't change it!
+    int updated;		// Update flag - used by the image processing loop - don't change it!
 	double adj_Y[2][2];	// Y offset adjustment from image capture calibration process
 };
 
