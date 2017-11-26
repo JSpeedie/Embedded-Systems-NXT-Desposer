@@ -1,7 +1,7 @@
 FIX PENALTY DIAGRAM, INFINITE LOOP
 FIX SOCCER DIAGRAM, RANDOM TEXT, MISSING LABELS, WRONG ARROWS
 
-bool opponent_angle(struct RoboAI *ai){ // opponent's angle to ball
+int opponent_angle(struct RoboAI *ai){ // opponent's angle to ball
    // if you devide the dot_product by the product of the magnitudes of the vectors
   // you get this; trying to get theta to 0 aka bringing cos(theta) to 1
   double cos_theta;
@@ -58,4 +58,14 @@ void shoot(struct RoboAI *ai, struct RoboAI *ai2){
   } else {
     push();
   }
+}
+
+int check_blob_exists(struct RoboAI *ai){  // dealing with segfaults due to dissapearing blobs
+   return(ai->st.self->size > 10) // change to appropriate number
+}
+
+void out_of_bounds(struct RoboAI *ai){ // reverse if out of bounds to get back into arena
+   reverse();
+   sleep(2);
+   all_stop();
 }
