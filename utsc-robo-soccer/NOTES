@@ -1,2 +1,61 @@
 FIX PENALTY DIAGRAM, INFINITE LOOP
 FIX SOCCER DIAGRAM, RANDOM TEXT, MISSING LABELS, WRONG ARROWS
+
+bool opponent_angle(struct RoboAI *ai){ // opponent's angle to ball
+   // if you devide the dot_product by the product of the magnitudes of the vectors
+  // you get this; trying to get theta to 0 aka bringing cos(theta) to 1
+  double cos_theta;
+
+  // put the current direction in a vector
+  double current_direction_vector[2];
+  current_direction_vector[0] = ai->st.opp->dx;
+  current_direction_vector[1] = ai->st.opp->dy;
+
+  // get the vector for the distance to the ball
+  double *distance_vector = ball_distance_vector(ai);
+
+  // calculate the dot product of the current_direction_vector and the distance_vector
+  double dot_product_result = dot_product(current_direction_vector, distance_vector, 2);
+
+  // calculate the magnitudes of the current_direction_vector and the distance_vector
+  double current_direction_vector_mag = vector_magnitude(current_direction_vector, 2);
+  double distance_vector_mag = vector_magnitude(distance_vector, 2);
+
+  // calculate cos(theta)
+  cos_theta = dot_product_result / (current_direction_vector_mag, distance_vector_mag);
+  return(cos_theta < 1.1) // return true if opponent is somewhat within proper angle of ball  
+}
+
+void defend_ball(struct RoboAI *ai, struct RoboAI *ai2){  // if opponent has good angle to ball, defend
+  if(opponent_angle(ai2)){
+    drive_to_ball();  // drive up near ball
+    ball.rotate(45);  // put bot into horizontal orientation, taking up as much space as possible to defend
+  }
+}
+
+double distance_from_opponent(struct RoboAI *ai, struct RoboAI *ai2){
+   double sx = ai->st.self->cx;
+  double sy = ai->st.self->cy;
+
+  double ox = ai->st.opp->cx;
+  double oy = ai->st.opp->cy; 
+
+  double *distance =  malloc(sizeof(double) * 2);
+  distance[0] = fabs(sx - ox);
+  distance[1] = fabs(sy - oy);
+  
+  return distance;
+}
+
+void push(struct RoboAI *ai){
+  drive(10); // slowly push ball 
+}
+
+void shoot(struct RoboAI *ai, struct RoboAI *ai2){
+  if((calculate_angle > 5 || calculate angle < -5) && distance_from_opponent(ai, ai2) > 5){ // if angle to goal within range of 5m and at least 5m from opponent
+    cos_pid(ai);
+    kick();
+  } else {
+    push();
+  }
+}
