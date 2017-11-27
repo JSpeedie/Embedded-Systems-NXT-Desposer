@@ -65,8 +65,14 @@ int check_blob_exists(struct RoboAI *ai){  // dealing with segfaults due to diss
 }
 
 void out_of_bounds(struct RoboAI *ai){ // reverse if out of bounds to get back into arena
+   double sx = ai->st.self->cx;
+   double sy = ai->st.self->cy;
+   if(sx > 900 || sy > 600){
+      reverse();
+   }
    reverse();
    sleep(2);
+   if(
    all_stop();
 }
 
