@@ -622,7 +622,9 @@ double cos_pid(struct RoboAI *ai) {
   double current_direction_vector[2];
   current_direction_vector[0] = ai->st.self->dx;
   current_direction_vector[1] = ai->st.self->dy;
-
+  
+  printf("Direction X %lf\n", current_direction_vector[0]);
+  printf("Direction Y %lf\n", current_direction_vector[1]);
   // get the vector for the distance to the ball
   double *distance_vector = ball_distance_vector(ai);
 
