@@ -69,3 +69,11 @@ void out_of_bounds(struct RoboAI *ai){ // reverse if out of bounds to get back i
    sleep(2);
    all_stop();
 }
+
+CHECKLIST:
+   - fix state diagrams
+   - boundary checking
+   - opponent checking
+   - chase ball
+   - add game logic (doesn't have to work)
+      - defend ball
