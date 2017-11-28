@@ -130,14 +130,6 @@ void track_agents(struct RoboAI *ai, struct blob *blobs)
  // parameters related to each agent:
  // - Position
  // - Velocity vector. Not valid while rotating, but possibly valid
-if(ai->st.state == 204) {
-        // if the ball is inside the threshold of the goal
-        // kick the ball
-        printf("We are in state 204\n");
-        kick();
-        retract();
-        ai->st.state -= 2; // go back to chasing the ball
-   }
  //   while turning.
  // - Heading (a unit vector in the direction of motion). Not valid
  //   while rotating - possibly valid while turning
@@ -284,6 +276,15 @@ if(ai->st.state == 204) {
   {
    vx/=mg;
    vy/=mg;
+if(ai->st.state == 105) {
+        // if the ball is inside the threshold of the goal
+        // kick the ball
+        printf("We are in state 105\n");
+        kick();
+        retract();
+        all_stop();
+        ai->st.state++;
+  }
    ai->st.omx=vx;
    ai->st.omy=vy;
   }
@@ -505,87 +506,9 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
    state transitions and with calling the appropriate function based on what
    the bot is supposed to be doing.
   *****************************************************************************/
-
-//----------------------------------------------------- SOCCER GAME
-
-  if(ai->st.state == 1) {
-	printf("We are in state 1\n");
-	ai->st.state++;
-  }
-
-  if(ai->st.state == 2){
-	printf("We are in state 2\n");
-        // if the ball is on the field pivot until direction matches ball
-        if(find_ball(ai)) {
-                double cos_theta = get_cos_theta_direction_distance(ai);
-                double error = cos_pid(cos_theta);
-                printf("This is my dx %lf\n", ai->st.self->dx);
-                printf("This is my dy %lf\n", ai->st.self->dy);
-
-                double *distance = ball_distance_vector(ai);
-
-                printf("This is my x position %lf\n", ai->st.self->cx);
-                printf("This is my y position %lf\n", ai->st.self->cy);
-
-                printf("This is ball x position %lf\n", ai->st.ball->cx);
-                printf("This is ball y position %lf\n", ai->st.ball->cy);
-
-                printf("This is distance dx %lf\n", distance[0]);
-                printf("This is distance dy %lf\n", distance[1]);
-
-                printf("This is my cos(theta) %lf\n", cos_theta);
-                printf("This is the angle %lf\n", error);
-                // go to next state
-                if((error <= EPS && error >= 0) || !(find_ball(ai))) {
-                        ai->st.state += 4;
-                }
-        }
-  }
-
-  if(ai->st.state == 3){
-    printf("We are in state 3\n");
-
-    // redundancy check to make sure the orientation is correct
-    double theta = acos(get_cos_theta_direction_distance(ai));
-    double *distance_vector = ball_distance_vector(ai);
-    double distance_vector_mag = vector_magnitude(distance_vector, 2);
-    if(theta <= EPS && theta >= 0) {
-        // use distance PID to move the robot forward
-        double error_d = distance_pid(distance_vector_mag, ai);
-        // check if the robot returned a negative error
-        if(error_d < 0) {
-                // if error is negative then our distance from the ball
-                // is increasing which means we need to readjust
-                // go back to previous state
-                ai->st.state --;
-        }
-
-      // check if we are close enough to the ball
-        if(error_d <= 100 && error_d > 0) {
-                // go to the next state if we are
-                ai->st.state ++;
-        }
-    // go back to the previous state and re-adjust yourself
-        } else {
-                ai->st.state --;
-        }
-   }
-
-   if(ai->st.state == 4) {
-        // if the ball is inside the threshold of the goal
-        // kick the ball
-        printf("We are in state 4\n");
-        kick();
-        retract();
-        ai->st.state -= 2; // go back to chasing the ball
-   }
-
-
-//----------------------------------------------------- PENALTY SHOT
-
   if(ai->st.state == 101) {
     	printf("We are in state 101\n");
-  	ai->st.state++;
+  	ai->st.state ++;
   }
 
   if(ai->st.state == 102) {
@@ -612,7 +535,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
       		printf("This is the angle %lf\n", error);
       		// go to next state
       		if((error <= EPS && error >= 0) || !(find_ball(ai))) {
-        		ai->st.state += 4;
+        		ai->st.state = 106;
       		}
     	}
   }
@@ -626,7 +549,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
     double distance_vector_mag = vector_magnitude(distance_vector, 2);
     if(theta <= EPS && theta >= 0) {
       	// use distance PID to move the robot forward
-      	double error_d = distance_pid(distance_vector_mag, ai);
+      	double error_d = distance_pid(distance_vector_mag);
       	// check if the robot returned a negative error
       	if(error_d < 0) {
         	// if error is negative then our distance from the ball
@@ -684,6 +607,34 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
       printf("This is my dy %lf\n", ai->st.self->dy);
 
       double *distance = ball_distance_vector(ai);
+if(ai->st.state == 103){
+    printf("We are in state 103\n");
+
+    // redundancy check to make sure the orientation is correct
+    double theta = acos(get_cos_theta_direction_distance(ai));
+    double *distance_vector = ball_distance_vector(ai);
+    double distance_vector_mag = vector_magnitude(distance_vector, 2);
+    if(theta <= EPS && theta >= 0) {
+        // use distance PID to move the robot forward
+        double error_d = distance_pid(distance_vector_mag);
+        // check if the robot returned a negative error
+        if(error_d < 0) {
+                // if error is negative then our distance from the ball
+                // is increasing which means we need to readjust
+                // go back to previous state
+                ai->st.state --;
+        }
+
+      // check if we are close enough to the ball
+        if(error_d <= 100 && error_d > 0) {
+                // go to the next state if we are
+                ai->st.state ++;
+        }
+    // go back to the previous state and re-adjust yourself
+        } else {
+                ai->st.state --;
+        }
+  }
 
       printf("This is my x position %lf\n", ai->st.self->cx);
       printf("This is my y position %lf\n", ai->st.self->cy);
@@ -700,7 +651,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 
       // go to next state
       if((error <= EPS && error >= 0) || !(find_ball(ai))) {
-              ai->st.state += 2;
+              ai->st.state = 206;
       }
     }
   }
@@ -714,7 +665,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
     double distance_vector_mag = vector_magnitude(distance_vector, 2);
     if(theta <= EPS && theta >= 0) {
         // use distance PID to move the robot forward
-        double error_d = distance_pid(distance_vector_mag, ai);
+        double error_d = distance_pid(distance_vector_mag);
         // check if the robot returned a negative error
         if(error_d < 0) {
                 // if error is negative then our distance from the ball
@@ -740,7 +691,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         printf("We are in state 204\n");
         kick();
         retract();
-        ai->st.state -= 2; // go back to chasing the ball
+        ai->st.state++;
    }
 
 
@@ -969,7 +920,7 @@ void my_pivot(int n, int input) {
 
 
 // PID controller for distance between ball and robot
-double distance_pid(double vector_mag, struct RoboAI *ai) {
+double distance_pid(double vector_mag) {
 
   double epsilon = 0.1;
   double kp = 5;
@@ -1021,16 +972,14 @@ double distance_pid(double vector_mag, struct RoboAI *ai) {
     distance_check = 1;
   }
 
-  if(check_boundaries(ai)){
-  	drive_speed(output);
-  	all_stop();
-  }
+  drive_speed(output);
+  all_stop();
   pre_error = error;
   return error * distance_check;
- }
+}  
 
- // do a 180 turn
- void turn_around() {
+// do a 180 turn
+void turn_around() {
   for(int i = 0; i < 6; i++) {
     pivot_left();
   }
