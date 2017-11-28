@@ -766,6 +766,10 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 **********************************************************************************/
 
 
+int near_opponent(struct RoboAI *ai){
+  double distnace_to_opp[2];
+}
+
 // figure out if the ball is even on the field
 int find_ball(struct RoboAI *ai) {
   return (ai->st.ball != NULL);
@@ -1024,6 +1028,8 @@ double distance_pid(double vector_mag, struct RoboAI *ai) {
   if(check_boundaries(ai)){
   	drive_speed(output);
   	all_stop();
+  } else {
+	turn_around();
   }
   pre_error = error;
   return error * distance_check;
