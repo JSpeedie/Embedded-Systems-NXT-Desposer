@@ -108,5 +108,6 @@ void drawLine(int x1, int y1, double vx, double vy, double scale, double R, doub
 void drawBox(int x1, int y1, int x2, int y2, double R, double G, double B, struct image *dst);
 void drawCross(int mcx, int mcy, double R, double G, double B, int len, struct image *dst);
 void drawCross_buf(int mcx, int mcy, double R, double G, double B, int len, unsigned char *dst);
+
 #endif
 

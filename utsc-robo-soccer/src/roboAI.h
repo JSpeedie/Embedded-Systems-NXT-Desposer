@@ -21,6 +21,7 @@
 #define _ROBO_AI_H
 
 #include "imagecapture/imageCapture.h"
+#include "API/robotControl.h"
 
 #define AI_SOCCER 0 	// Play soccer!
 #define AI_PENALTY 1    // Go score some goals!
@@ -44,8 +45,6 @@ struct AI_data{
   	int botCol;		// Own bot's colour. 0 - green, 1 - red
 
 	int state;		// Current AI state
-	int old_state; // Old State
-	int old_turn; // our previous turn
 
 	// Motion flags	- ** These should be set by your own code, if you want to  use them **
 	int mv_fwd;		// moving forward
@@ -138,7 +137,14 @@ int find_ball(struct RoboAI *ai);
 double dot_product(double v[], double u[], int n);
 double vector_magnitude(double *v, int n);
 double *ball_distance_vector(struct RoboAI *ai);
-double cos_pid(struct RoboAI *ai);
-
+double cos_pid(double cos_theta);
+double get_cos_theta_direction_distance(struct RoboAI *ai);
+double get_cos_theta(double *v, double *u);
+double distance_pid(double vector_mag);
+double *old_ball_distance(struct RoboAI *ai);
+double heading_direction_cos_theta(struct RoboAI *ai);
+void direction_fsm(struct RoboAI *ai, int input);
+void turn_around();
+void my_pivot();
 
 #endif

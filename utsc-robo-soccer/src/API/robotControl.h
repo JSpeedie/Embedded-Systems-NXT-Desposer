@@ -32,7 +32,7 @@
 #endif
 //set DIRECTION_KICKER to -1 if kicker is reversed
 #ifndef DIRECTION_KICKER
-	#define DIRECTION_KICKER 1
+	#define DIRECTION_KICKER -1
 #endif
 //POWER_FACTOR_RIGHT/LEFT multiplies all inputs to the right/left motor by this value. Used to account for differences in motor power.
 #ifndef POWER_FACTOR_RIGHT

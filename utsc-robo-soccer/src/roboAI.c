@@ -29,12 +29,15 @@
 ***************************************************************************/
 
 #include "imagecapture/imageCapture.h"
+#include "API/robotControl.h"
 #include "roboAI.h"			// <--- Look at this header file!
 #include <nxtlibc/nxtlibc.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#define EPS 0.05
+#define EPS 0.1
+#define MAX_SPEED 100
+#define MIN_SPEED 25
 
 void clear_motion_flags(struct RoboAI *ai)
 {
@@ -495,35 +498,73 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
    the bot is supposed to be doing.
   *****************************************************************************/
 	if(ai->st.state == 101) {
-		printf("We are in state 101\n");
+    printf("We are in 101\n");
+    ai->st.state ++;
+  }
 
+  if(ai->st.state == 102) {
+		printf("We are in state 102\n");
     // if the ball is on the field pivot until direction matches ball
     if(find_ball(ai)) {
-      double error = cos_pid(ai);
+      double cos_theta = get_cos_theta_direction_distance(ai);
+      double error = cos_pid(cos_theta);
+      printf("This is my dx %lf\n", ai->st.self->dx);
+      printf("This is my dy %lf\n", ai->st.self->dy);
+
+      double *distance = ball_distance_vector(ai);
+
+      printf("This is my x position %lf\n", ai->st.self->cx);
+      printf("This is my y position %lf\n", ai->st.self->cy);
+
+      printf("This is ball x position %lf\n", ai->st.ball->cx);
+      printf("This is ball y position %lf\n", ai->st.ball->cy);
+
+      printf("This is distance dx %lf\n", distance[0]);
+      printf("This is distance dy %lf\n", distance[1]);
+
+
+      printf("This is my cos(theta) %lf\n", cos_theta);
+      printf("This is the angle %lf\n", error);
       // go to next state
-      if(error <= EPS && error >= 0) {
-        ai->st.state ++;
+      if((error <= EPS && error >= 0) || !(find_ball(ai))) {
+        ai->st.state = 106;
       }
     }
 	}
-	if(ai->st.state == 102){
+	if(ai->st.state == 103){
+    
+    printf("We are in state 103\n");
 
-    // move robot forward
+    // redundancy check to make sure the orientation is correct
+    double theta = acos(get_cos_theta_direction_distance(ai));
+    double *distance_vector = ball_distance_vector(ai);
+    double distance_vector_mag = vector_magnitude(distance_vector, 2);
+    if(theta <= EPS && theta >= 0) {
+      // use distance PID to move the robot forward
+      double error_d = distance_pid(distance_vector_mag);
+      // check if the robot returned a negative error
+      if(error_d < 0) {
+        // if error is negative then our distance from the ball
+        // is increasing which means we need to readjust
+        // go back to previous state
+        ai->st.state --;
+      }
 
-    // check direction matches ball
-
-      // if yes keep moving forward untill we reach a thresh hold
-
-      // if not return to last state
-		printf("We are in state 102\n");
-    		all_stop();
-		//ai->st.state++;
+      // check if we are close enough to the ball
+      if(error_d <= 100 && error_d > 0) {
+        // go to the next state if we are
+        ai->st.state ++;
+      }
+    // go back to the previous state and re-adjust yourself
+    } else {
+      ai->st.state --;
+    }
 	}
 	if(ai->st.state == 104) {
 
     // position bot behind ball and facing the goal
 		printf("We are in state 104\n");
-		ai->st.state ++;
+	  ai->st.state ++;
 	}
 
 	if(ai->st.state == 105) {
@@ -532,15 +573,18 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 
       // kick the ball
     printf("We are in state 105\n");
+    kick();
+    retract();
+    all_stop();
 		ai->st.state++;
 	}
 	if(ai->st.state == 106){
-
+    printf("We are in 106\n");
     // we just kicked the ball; stop
 		all_stop();
 	}
 
-  fprintf(stderr,"Just trackin'!\n");	// bot, opponent, and ball.
+  //fprintf(stderr,"Just trackin'!\n");	// bot, opponent, and ball.
   track_agents(ai,blobs);		// Currently, does nothing but endlessly track
  }
 
@@ -566,6 +610,18 @@ int find_ball(struct RoboAI *ai) {
   return (ai->st.ball != NULL);
 }
 
+// figure out if we are in the boundaries
+int check_boundaries(struct RoboAI *ai) {
+  double sx = ai->st.self->cx;
+  double sy = ai->st.self->cy;
+
+  if (!((sx <= 924 && sx >= 0) && (sy <= 668 && sy >= 0))) {
+    return 0;
+  } else {
+    return 1;
+  }
+}
+
 // dot product calculator
 double dot_product(double v[], double u[], int n) {
     double result = 0.0;
@@ -584,35 +640,27 @@ double vector_magnitude(double *v, int n) {
   return sqrt(magnitude);
 }
 
-// calculate x and y distnace to the ball
-double *ball_distance_vector(struct RoboAI *ai) {
-  double sx = ai->st.self->cx;
-  double sy = ai->st.self->cy;
-
-  double bx = ai->st.ball->cx;
-  double by = ai->st.ball->cy; 
-
-  double *distance =  malloc(sizeof(double) * 2);
-  distance[0] = fabs(sx - bx);
-  distance[1] = fabs(sy - by);
+// calculate cos theta for any two vectors
+double get_cos_theta(double *v, double *u) {
   
-  return distance;
+  // get dot product of the two vectors
+  double dot_product_result = dot_product(v, u, 2);
+
+  // calculate the magnitude of the two vectors
+  double v_mag = vector_magnitude(v, 2);
+  double u_mag = vector_magnitude(u, 2);
+  double vector_mag = v_mag * u_mag;
+
+  // calculate cos theta
+  double cos_theta = dot_product_result / vector_mag;
+
+  return cos_theta;
+
 }
 
-// PID controller to reduce cos theta to zero
-double cos_pid(struct RoboAI *ai) {
-
-  double epsilon = 0.01;
-  double kp = 18;
-  double kd = 7;
-  double ki = 10;
-
-  static double pre_error = 0;
-  static double integral = 0;
-  static double time = 0.01;
-  double error;
-  double derivative;
-  double output;
+// get the orientation of our robot with respect to the ball using 
+// the result from the dot product/ mag of vectors, aka cos(theta)
+double get_cos_theta_direction_distance(struct RoboAI *ai) {
 
   // if you devide the dot_product by the product of the magnitudes of the vectors
   // you get this; trying to get theta to 0 aka bringing cos(theta) to 1
@@ -626,19 +674,86 @@ double cos_pid(struct RoboAI *ai) {
   // get the vector for the distance to the ball
   double *distance_vector = ball_distance_vector(ai);
 
-  // calculate the dot product of the current_direction_vector and the distance_vector
-  double dot_product_result = dot_product(current_direction_vector, distance_vector, 2);
+  cos_theta = get_cos_theta(distance_vector, current_direction_vector);
 
-  // calculate the magnitudes of the current_direction_vector and the distance_vector
-  double current_direction_vector_mag = vector_magnitude(current_direction_vector, 2);
-  double distance_vector_mag = vector_magnitude(distance_vector, 2);
+  free(distance_vector);
 
-  // calculate cos(theta)
-  cos_theta = dot_product_result / (current_direction_vector_mag, distance_vector_mag);
-  printf("cos theta: %lf\n", cos_theta);
+  return cos_theta;
+
+}
+
+double heading_direction_cos_theta(struct RoboAI *ai) {
+
+  // if you devide the dot_product by the product of the magnitudes of the vectors
+  // you get this; trying to get theta to 0 aka bringing cos(theta) to 1
+  double cos_theta;
+
+  // put the current direction in a vector
+  double current_direction_vector[2];
+  current_direction_vector[0] = ai->st.self->dx;
+  current_direction_vector[1] = ai->st.self->dy;
+
+  double current_heading_vector[2];
+  current_heading_vector[0] = ai->st.self->mx;
+  current_heading_vector[1] = ai->st.self->my;
+  cos_theta = get_cos_theta(current_heading_vector, current_direction_vector);
+
+  double theta = acos(cos_theta);
+
+  return theta;
+}
+
+// calculate x and y distnace to the ball
+double *ball_distance_vector(struct RoboAI *ai) {
+
+  double sx = ai->st.self->cx;
+  double sy = ai->st.self->cy;
+
+  double bx = ai->st.ball->cx;
+  double by = ai->st.ball->cy;
+
+  double *distance =  malloc(sizeof(double) * 2);
+  distance[0] = sx - bx;
+  distance[1] = sy - by;
+  
+  return distance;
+}
+
+// calculate x and y distnace to the ball last frame
+double *old_ball_distance(struct RoboAI *ai) {
+
+  double sx = ai->st.old_scx;
+  double sy = ai->st.old_scy;
+
+  double bx = ai->st.old_bcx;
+  double by = ai->st.old_bcy;
+
+  double *distance =  malloc(sizeof(double) * 2);
+  distance[0] = fabs(sx - bx);
+  distance[1] = fabs(sy - by);
+  
+  return distance;
+}
+
+// PID controller to reduce cos theta to zero
+double cos_pid(double cos_theta) {
+
+  double epsilon = 0.1;
+  double kp = 5;
+  double kd = 1;
+  double ki = 1;
+
+  static double pre_error = 0;
+  static double integral = 0;
+  static double time = 0.01;
+  static double last_output = 0;
+  static int last_pivot = -1;
+  double error;
+  double derivative;
+  double raw_output;
 
   // Calculate P, I, D
-  error = 1 - fabs(cos_theta); // P
+  error = acos(cos_theta); // P
 
   // In case of error too small then stop integration
   if(fabs(error) > epsilon) { // I
@@ -647,26 +762,113 @@ double cos_pid(struct RoboAI *ai) {
 
   derivative = fabs(error - pre_error) / time; // D
 
-  output = kp * error + ki * integral + kd * derivative;
+  raw_output = kp * error + ki * integral + kd * derivative;
   printf("pre-error, error: %lf, %lf\n", pre_error, error);
-  pre_error += error;
+
+  time += 0.01;
+
+  int output = fabs((int)raw_output);
+
+  // make sure our output is not entirely insane
+  if(output > MAX_SPEED) {
+    output = MAX_SPEED;
+  } else if(output < MIN_SPEED) {
+    output = MIN_SPEED;
+  }
+  // check if our angle is getting bigger
+  if(pre_error < error) {
+    // if our angle is getting bigger than it means we are pivoting the wrong way
+    // this function makes sure we pivot the other way if that is the case
+    int inverse_of_last_pvt = 0 - last_pivot;
+    my_pivot(inverse_of_last_pvt, output);
+    last_pivot = inverse_of_last_pvt;
+  } else {
+    // if our angle is indeed getting smaller then keep pivoting the same way
+    my_pivot(last_pivot, output);
+    last_pivot = last_pivot;
+  }
+  printf("Left is -1; Right is 1\n");
+  printf("Turned %d, with this output %d\n", last_pivot, output);
+  pre_error = error;
+  return error;
+}
+
+// my pivot function to decide where to pivot
+void my_pivot(int n, int input) {
+
+  // if our last pivot was right turn left
+  if(n == 1){
+    pivot_right_speed(input);
+    all_stop();
+  } else if(n == -1) {
+    pivot_left_speed(input);
+    all_stop();
+  }
+}
+
+
+// PID controller for distance between ball and robot
+double distance_pid(double vector_mag) {
+
+  double epsilon = 0.1;
+  double kp = 5;
+  double kd = 1;
+  double ki = 1;
+
+  static double pre_error = 0;
+  static double integral = 0;
+  static double time = 0.01;
+  static int distance_check;
+  double error;
+  double derivative;
+  double raw_output;
+
+  // Calculate P, I, D
+  error = vector_mag; // P
+
+  // In case of error too small then stop integration
+  if(fabs(error) > epsilon) { // I
+    integral = integral + error * time; // figure out how to get time 
+  }
+
+  derivative = fabs(error - pre_error) / time; // D
+
+  raw_output = kp * error + ki * integral + kd * derivative;
+  printf("pre-error, error: %lf, %lf\n", pre_error, error);
   time += 0.01;
 
   // ideally we would know which way to pivot for maximum efficiency but for now
   // we can just pivot right or left and each time this function is called cos_theta would be updated
   // based on new measurements
+  int output = fabs((int)raw_output);
+  printf("Drive forward output %d\n", output);
 
-  int output2 = fabs((int)output);
-  printf("output is: %lf\n", fabs((int)output2));
-  pivot_right_speed(output2 % 100);
+  // make sure our output is not entirely insane
+  if(output > MAX_SPEED) {
+    output = MAX_SPEED;
+  } else if(output < MIN_SPEED) {
+    output = MIN_SPEED;
+  }
+
+  // check if our distance is getting bigger
+  if(pre_error < error) {
+    // if it is getting bigger let the FSM know that so it can go back a state and
+    // re-orient the bot
+    distance_check = -1;
+  } else {
+    // let the fsm know everything is okay
+    distance_check = 1;
+  }
+
+  drive_speed(output);
   all_stop();
-  printf("turn and stopped\n");
-  return error;
+  pre_error = error;
+  return error * distance_check;
+}  
+
+// do a 180 turn
+void turn_around() {
+  for(int i = 0; i < 6; i++) {
+    pivot_left();
+  }
 }
-
-
-
-
-
-
-
