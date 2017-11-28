@@ -30,14 +30,23 @@
 
 #include "imagecapture/imageCapture.h"
 #include "API/robotControl.h"
-#include "roboAI.h"			// <--- Look at this header file!
+#include "roboAI.h"     // <--- Look at this header file!
 #include <nxtlibc/nxtlibc.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#define EPS 0.1
-#define MAX_SPEED 100
-#define MIN_SPEED 25
+#define EPS 0.21
+#define MAX_SPEED 60
+#define MIN_SPEED 15
+
+#define RED_GOAL_X 462
+#define RED_GOAL_Y 1000
+
+#define GREEN_GOAL_X 462
+#define GREEN_GOAL_Y 50
+
+#define MAX_X 1024
+#define MAX_Y 768
 
 void clear_motion_flags(struct RoboAI *ai)
 {
@@ -65,11 +74,11 @@ struct blob *id_coloured_blob(struct RoboAI *ai, struct blob *blobs, int col)
  //                   1 -> G
  //                   2 -> B
  // Returns: Pointer to the blob with the desired colour, or NULL if no such
- // 	     blob can be found.
+ //        blob can be found.
  /////////////////////////////////////////////////////////////////////////////
 
  struct blob *p, *fnd;
- double BCRT=1.05;			// Ball colour ratio threshold
+ double BCRT=1.05;      // Ball colour ratio threshold
  double c1,c2,c3,m,mi,ma;
  double oc1,oc2,oc3;
  int i;
@@ -82,7 +91,7 @@ struct blob *id_coloured_blob(struct RoboAI *ai, struct blob *blobs, int col)
  fnd=NULL;
  while (p!=NULL)
  {
-  if (col==0) {c1=p->R; c2=p->G; c3=p->B;} 	// detect red
+  if (col==0) {c1=p->R; c2=p->G; c3=p->B;}  // detect red
   else if (col==1) {c1=p->G; c2=p->R; c3=p->B;} // detect green
   else if (col==2){c1=p->B; c2=p->G; c3=p->R;}  // detect blue
 
@@ -101,10 +110,10 @@ struct blob *id_coloured_blob(struct RoboAI *ai, struct blob *blobs, int col)
   c2+=.001;
   c3+=.001;
   
-  if (c1/c2>BCRT&&c1/c3>BCRT)			// Blob has sufficient colour contrast
+  if (c1/c2>BCRT&&c1/c3>BCRT)     // Blob has sufficient colour contrast
   {
-   m=(c1/c2)+(c1/c3);				// Total color contrast ch1 vs ch2 and ch3
-   if (fnd==NULL||m>(oc1/oc2)+(oc1/oc3)) 	// Found the first blob with this color, or a more colorful one
+   m=(c1/c2)+(c1/c3);       // Total color contrast ch1 vs ch2 and ch3
+   if (fnd==NULL||m>(oc1/oc2)+(oc1/oc3))  // Found the first blob with this color, or a more colorful one
    {
     fnd=p;
     oc1=c1;
@@ -168,29 +177,29 @@ if(ai->st.state == 204) {
  ai->st.ballID=0;
  ai->st.selfID=0;
  ai->st.oppID=0;
- ai->st.ball=NULL;			// Be sure you check these are not NULL before
- ai->st.self=NULL;			// trying to access data for the ball/self/opponent!
+ ai->st.ball=NULL;      // Be sure you check these are not NULL before
+ ai->st.self=NULL;      // trying to access data for the ball/self/opponent!
  ai->st.opp=NULL;
 
  // Find the ball
  p=id_coloured_blob(ai,blobs,2);
  if (p)
  {
-  ai->st.ball=p;			// New pointer to ball
-  ai->st.ballID=1;			// Set ID flag for ball (we found it!)
-  ai->st.bvx=p->cx-ai->st.old_bcx;	// Update ball velocity in ai structure and blob structure
+  ai->st.ball=p;      // New pointer to ball
+  ai->st.ballID=1;      // Set ID flag for ball (we found it!)
+  ai->st.bvx=p->cx-ai->st.old_bcx;  // Update ball velocity in ai structure and blob structure
   ai->st.bvy=p->cy-ai->st.old_bcy;
   ai->st.ball->vx=ai->st.bvx;
   ai->st.ball->vy=ai->st.bvy;
 
-  ai->st.old_bcx=p->cx; 		// Update old position for next frame's computation
+  ai->st.old_bcx=p->cx;     // Update old position for next frame's computation
   ai->st.old_bcy=p->cy;
   ai->st.ball->idtype=3;
 
-  vx=ai->st.bvx;			// Compute heading direction (normalized motion vector)
+  vx=ai->st.bvx;      // Compute heading direction (normalized motion vector)
   vy=ai->st.bvy;
   mg=sqrt((vx*vx)+(vy*vy));
-  if (mg>NOISE_VAR)			// Update heading vector if meaningful motion detected
+  if (mg>NOISE_VAR)     // Update heading vector if meaningful motion detected
   {
    vx/=mg;
    vy/=mg;
@@ -209,7 +218,7 @@ if(ai->st.state == 204) {
  else p=id_coloured_blob(ai,blobs,0);
  if (p)
  {
-  ai->st.self=p;			// Update pointer to self-blob
+  ai->st.self=p;      // Update pointer to self-blob
 
   // Adjust Y position if we have calibration data
   if (fabs(p->adj_Y[0][0])>.1)
@@ -254,7 +263,7 @@ if(ai->st.state == 204) {
  else p=id_coloured_blob(ai,blobs,1);
  if (p)
  {
-  ai->st.opp=p;	
+  ai->st.opp=p; 
 
   if (fabs(p->adj_Y[0][1])>.1)
   {
@@ -324,10 +333,10 @@ void id_bot(struct RoboAI *ai, struct blob *blobs)
  static double stepID=0;
  double frame_inc=1.0/5.0;
 
- //drive_speed(30);			// Start forward motion to establish heading
-					// Will move for a few frames.
+ //drive_speed(30);     // Start forward motion to establish heading
+          // Will move for a few frames.
 
- track_agents(ai,blobs);		// Call the tracking function to find each agent
+ track_agents(ai,blobs);    // Call the tracking function to find each agent
 
  if (ai->st.selfID==1&&ai->st.self!=NULL)
   fprintf(stderr,"Successfully identified self blob at (%f,%f)\n",ai->st.self->cx,ai->st.self->cy);
@@ -337,7 +346,7 @@ void id_bot(struct RoboAI *ai, struct blob *blobs)
   fprintf(stderr,"Successfully identified ball blob at (%f,%f)\n",ai->st.ball->cx,ai->st.ball->cy);
 
  stepID+=frame_inc;
- if (stepID>=1&&ai->st.selfID==1)	// Stop after a suitable number of frames.
+ if (stepID>=1&&ai->st.selfID==1) // Stop after a suitable number of frames.
  {
   ai->st.state+=1;
   stepID=0;
@@ -372,24 +381,24 @@ int setupAI(int mode, int own_col, struct RoboAI *ai)
 
  switch (mode) {
  case AI_SOCCER:
-	fprintf(stderr,"Standard Robo-Soccer mode requested\n");
-        ai->st.state=0;		// <-- Set AI initial state to 0
+  fprintf(stderr,"Standard Robo-Soccer mode requested\n");
+        ai->st.state=0;   // <-- Set AI initial state to 0
         break;
  case AI_PENALTY:
-	fprintf(stderr,"Penalty mode! let's kick it!\n");
-	ai->st.state=100;	// <-- Set AI initial state to 100
+  fprintf(stderr,"Penalty mode! let's kick it!\n");
+  ai->st.state=100; // <-- Set AI initial state to 100
         break;
  case AI_CHASE:
-	fprintf(stderr,"Chasing the ball...\n");
-	ai->st.state=200;	// <-- Set AI initial state to 200
-        break;	
+  fprintf(stderr,"Chasing the ball...\n");
+  ai->st.state=200; // <-- Set AI initial state to 200
+        break;  
  default:
-	fprintf(stderr, "AI mode %d is not implemented, setting mode to SOCCER\n", mode);
-	ai->st.state=0;
-	}
+  fprintf(stderr, "AI mode %d is not implemented, setting mode to SOCCER\n", mode);
+  ai->st.state=0;
+  }
 
- all_stop();			// Stop bot,
- ai->runAI = AI_main;		// and initialize all remaining AI data
+ all_stop();      // Stop bot,
+ ai->runAI = AI_main;   // and initialize all remaining AI data
  ai->calibrate = AI_calibrate;
  ai->st.ball=NULL;
  ai->st.self=NULL;
@@ -457,28 +466,28 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 
   The first two states for each more are already defined:
   State 0,100,200 - Before robot ID has taken place (this state is the initial
-            	    state, or is the result of pressing 'r' to reset the AI)
+                  state, or is the result of pressing 'r' to reset the AI)
   State 1,101,201 - State after robot ID has taken place. At this point the AI
-            	    knows where the robot is, as well as where the opponent and
-            	    ball are (if visible on the playfield)
+                  knows where the robot is, as well as where the opponent and
+                  ball are (if visible on the playfield)
 
   Relevant UI keyboard commands:
   'r' - reset the AI. Will set AI state to zero and re-initialize the AI
-	data structure.
+  data structure.
   't' - Toggle the AI routine (i.e. start/stop calls to AI_main() ).
   'o' - Robot immediate all-stop! - do not allow your NXT to get damaged!
 
   ** Do not change the behaviour of the robot ID routine **
  **************************************************************************/
 
- if (ai->st.state==0||ai->st.state==100||ai->st.state==200)  	// Initial set up - find own, ball, and opponent blobs
+ if (ai->st.state==0||ai->st.state==100||ai->st.state==200)   // Initial set up - find own, ball, and opponent blobs
  {
   // Carry            
   //  40                                                                    out self id process.
   fprintf(stderr,"Initial state, self-id in progress...\n");
   id_bot(ai,blobs);
-  if ((ai->st.state%100)!=0)	// The id_bot() routine will change the AI state to initial state + 1
-  {				// if robot identification is successful.
+  if ((ai->st.state%100)!=0)  // The id_bot() routine will change the AI state to initial state + 1
+  {       // if robot identification is successful.
    if (ai->st.self->cx>=512) ai->st.side=1; else ai->st.side=0;
    all_stop();
    clear_motion_flags(ai);
@@ -509,35 +518,22 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 //----------------------------------------------------- SOCCER GAME
 
   if(ai->st.state == 1) {
-	printf("We are in state 1\n");
-	ai->st.state++;
+  printf("We are in state 1\n");
+  ai->st.state++;
   }
 
   if(ai->st.state == 2){
-	printf("We are in state 2\n");
+  printf("We are in state 2\n");
         // if the ball is on the field pivot until direction matches ball
         if(find_ball(ai)) {
                 double cos_theta = get_cos_theta_direction_distance(ai);
-                double error = cos_pid(cos_theta);
-                printf("This is my dx %lf\n", ai->st.self->dx);
-                printf("This is my dy %lf\n", ai->st.self->dy);
+                double error = orient_pid(cos_theta);
 
                 double *distance = ball_distance_vector(ai);
 
-                printf("This is my x position %lf\n", ai->st.self->cx);
-                printf("This is my y position %lf\n", ai->st.self->cy);
-
-                printf("This is ball x position %lf\n", ai->st.ball->cx);
-                printf("This is ball y position %lf\n", ai->st.ball->cy);
-
-                printf("This is distance dx %lf\n", distance[0]);
-                printf("This is distance dy %lf\n", distance[1]);
-
-                printf("This is my cos(theta) %lf\n", cos_theta);
-                printf("This is the angle %lf\n", error);
                 // go to next state
-                if((error <= EPS && error >= 0) || !(find_ball(ai))) {
-                        ai->st.state += 4;
+                if((error <= 3.00 && error >= 2.51) || !(find_ball(ai))) {
+                        ai->st.state ++;
                 }
         }
   }
@@ -549,26 +545,31 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
     double theta = acos(get_cos_theta_direction_distance(ai));
     double *distance_vector = ball_distance_vector(ai);
     double distance_vector_mag = vector_magnitude(distance_vector, 2);
-    if(theta <= EPS && theta >= 0) {
-        // use distance PID to move the robot forward
-        double error_d = distance_pid(distance_vector_mag, ai);
-        // check if the robot returned a negative error
-        if(error_d < 0) {
-                // if error is negative then our distance from the ball
-                // is increasing which means we need to readjust
-                // go back to previous state
-                ai->st.state --;
-        }
 
-      // check if we are close enough to the ball
-        if(error_d <= 100 && error_d > 0) {
-                // go to the next state if we are
-                ai->st.state ++;
-        }
+    // if(theta <= EPS && theta >= 0) {
+    // use distance PID to move the robot forward
+    double error_d = distance_pid(distance_vector_mag, ai);
+    printf("DISTANCE TO BALL %lf\n", error_d);
+    // check if the robot returned a negative error
+    if(error_d < 0) {
+            // if error is negative then our distance from the ball
+            // is increasing which means we need to readjust
+            // go back to previous state
+            ai->st.state --;
+    }
+
+    // check if we are close enough to the ball
+    if(error_d <= 100 && error_d > 0) {
+            // go to the next state if we are
+            ai->st.state ++;
+    }
+
+    /*
     // go back to the previous state and re-adjust yourself
-        } else {
-                ai->st.state --;
-        }
+    } else {
+            ai->st.state --;
+    }
+    */
    }
 
    if(ai->st.state == 4) {
@@ -584,37 +585,24 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 //----------------------------------------------------- PENALTY SHOT
 
   if(ai->st.state == 101) {
-    	printf("We are in state 101\n");
-  	ai->st.state++;
+      printf("We are in state 101\n");
+    ai->st.state++;
   }
 
   if(ai->st.state == 102) {
-  	printf("We are in state 102\n");
-    	// if the ball is on the field pivot until direction matches ball
-    	if(find_ball(ai)) {
-      		double cos_theta = get_cos_theta_direction_distance(ai);
-      		double error = cos_pid(cos_theta);
-      		printf("This is my dx %lf\n", ai->st.self->dx);
-      		printf("This is my dy %lf\n", ai->st.self->dy);
+    printf("We are in state 102\n");
+      // if the ball is on the field pivot until direction matches ball
+      if(find_ball(ai)) {
+          double cos_theta = get_cos_theta_direction_distance(ai);
+          double error = orient_pid(cos_theta);
 
-      		double *distance = ball_distance_vector(ai);
+          double *distance = ball_distance_vector(ai);
 
-      		printf("This is my x position %lf\n", ai->st.self->cx);
-      		printf("This is my y position %lf\n", ai->st.self->cy);
-
-      		printf("This is ball x position %lf\n", ai->st.ball->cx);
-      		printf("This is ball y position %lf\n", ai->st.ball->cy);
-
-      		printf("This is distance dx %lf\n", distance[0]);
-      		printf("This is distance dy %lf\n", distance[1]);
-
-      		printf("This is my cos(theta) %lf\n", cos_theta);
-      		printf("This is the angle %lf\n", error);
-      		// go to next state
-      		if((error <= EPS && error >= 0) || !(find_ball(ai))) {
-        		ai->st.state += 4;
-      		}
-    	}
+          // go to next state
+          if((error <= 3.04 && error >= 2.7) || !(find_ball(ai))) {
+            ai->st.state ++;
+          }
+      }
   }
 
   if(ai->st.state == 103){
@@ -624,48 +612,50 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
     double theta = acos(get_cos_theta_direction_distance(ai));
     double *distance_vector = ball_distance_vector(ai);
     double distance_vector_mag = vector_magnitude(distance_vector, 2);
-    if(theta <= EPS && theta >= 0) {
-      	// use distance PID to move the robot forward
-      	double error_d = distance_pid(distance_vector_mag, ai);
-      	// check if the robot returned a negative error
-      	if(error_d < 0) {
-        	// if error is negative then our distance from the ball
-        	// is increasing which means we need to readjust
-        	// go back to previous state
-        	ai->st.state --;
-      	}
+    // if(theta <= 3.04 && theta >= 2.08) {
+    // use distance PID to move the robot forward
+    double error_d = distance_pid(distance_vector_mag, ai);
+    // check if the robot returned a negative error
+    if(error_d < 0) {
+      // if error is negative then our distance from the ball
+      // is increasing which means we need to readjust
+      // go back to previous state
+      ai->st.state --;
+    }
 
-      // check if we are close enough to the ball
-      	if(error_d <= 100 && error_d > 0) {
-        	// go to the next state if we are
-        	ai->st.state ++;
-      	}
+  // check if we are close enough to the ball
+    if(error_d <= 100 && error_d > 0) {
+      // go to the next state if we are
+      ai->st.state ++;
+    }
+
+    /*
     // go back to the previous state and re-adjust yourself
-	} else {
-      		ai->st.state --;
-    	}
+   } else {
+          ai->st.state --;
+   } */
   }
 
   if(ai->st.state == 104) {
-  	// position bot behind ball and facing the goal
-	printf("We are in state 104\n");
-	ai->st.state ++;
+    // position bot behind ball and facing the goal
+  printf("We are in state 104\n");
+  ai->st.state ++;
   }
 
   if(ai->st.state == 105) {
-    	// if the ball is inside the threshold of the goal
-      	// kick the ball
-    	printf("We are in state 105\n");
-    	kick();
-    	retract();
-    	all_stop();
-  	ai->st.state++;
+      // if the ball is inside the threshold of the goal
+        // kick the ball
+      printf("We are in state 105\n");
+      kick();
+      retract();
+      all_stop();
+    ai->st.state++;
   }
 
   if(ai->st.state == 106){
-	printf("We are in state 106\n");
-    	// we just kicked the ball; stop
-	all_stop();
+  printf("We are in state 106\n");
+      // we just kicked the ball; stop
+  all_stop();
   }
 
 //---------------------------------------------------CHASE BALL
@@ -679,7 +669,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
     // if the ball is on the field pivot until direction matches ball
     if(find_ball(ai)) {
       double cos_theta = get_cos_theta_direction_distance(ai);
-      double error = cos_pid(cos_theta);
+      double error = orient_pid(cos_theta);
       printf("This is my dx %lf\n", ai->st.self->dx);
       printf("This is my dy %lf\n", ai->st.self->dy);
 
@@ -745,8 +735,8 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 
 
 
-  //fprintf(stderr,"Just trackin'!\n");	// bot, opponent, and ball.
-  track_agents(ai,blobs);		// Currently, does nothing but endlessly track
+  //fprintf(stderr,"Just trackin'!\n"); // bot, opponent, and ball.
+  track_agents(ai,blobs);   // Currently, does nothing but endlessly track
  }
 
 }
@@ -765,11 +755,6 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
  there.
 **********************************************************************************/
 
-
-int near_opponent(struct RoboAI *ai){
-  double distnace_to_opp[2];
-}
-
 // figure out if the ball is even on the field
 int find_ball(struct RoboAI *ai) {
   return (ai->st.ball != NULL);
@@ -780,7 +765,7 @@ int check_boundaries(struct RoboAI *ai) {
   double sx = ai->st.self->cx;
   double sy = ai->st.self->cy;
 
-  if (!((sx <= 924 && sx >= 0) && (sy <= 668 && sy >= 0))) {
+  if (!((sx <= MAX_X && sx >= 0) && (sy <= MAX_Y && sy >= 0))) {
     return 0;
   } else {
     return 1;
@@ -884,6 +869,21 @@ double *ball_distance_vector(struct RoboAI *ai) {
   return distance;
 }
 
+double *near_opponent(struct RoboAI *ai){
+  double sx = ai->st.self->cx;
+  double sy = ai->st.self->cy;
+
+  double bx = ai->st.opp->cx;
+  double by = ai->st.opp->cy;
+
+  double *distance =  malloc(sizeof(double) * 2);
+  distance[0] = sx - bx;
+  distance[1] = sy - by;
+  
+  return distance;
+}
+
+
 // calculate x and y distnace to the ball last frame
 double *old_ball_distance(struct RoboAI *ai) {
 
@@ -900,8 +900,27 @@ double *old_ball_distance(struct RoboAI *ai) {
   return distance;
 }
 
+// logic for dealing with opponent
+void opponent_fsm(double *distance) {
+
+  // keep track of our last distance to opponent
+  static double old_distance = 0;
+  // get the magnitude of the vector to opponent from our bot
+  double distance_to_opp = vector_magnitude(distance, 2);
+  // check if we are too close to opponent
+  if(distance_to_opp <= 50) {
+    // go back
+    reverse();
+    if(old_distance > distance_to_opp) {
+      all_stop();
+      reverse();
+    }
+  } 
+  old_distance = distance_to_opp;
+}
+
 // PID controller to reduce cos theta to zero
-double cos_pid(double cos_theta) {
+double orient_pid(double cos_theta) {
 
   double epsilon = 0.1;
   double kp = 5;
@@ -1006,7 +1025,6 @@ double distance_pid(double vector_mag, struct RoboAI *ai) {
   // we can just pivot right or left and each time this function is called cos_theta would be updated
   // based on new measurements
   int output = fabs((int)raw_output);
-  printf("Drive forward output %d\n", output);
 
   // make sure our output is not entirely insane
   if(output > MAX_SPEED) {
@@ -1014,6 +1032,8 @@ double distance_pid(double vector_mag, struct RoboAI *ai) {
   } else if(output < MIN_SPEED) {
     output = MIN_SPEED;
   }
+
+  printf("Drive forward output %d\n", output);
 
   // check if our distance is getting bigger
   if(pre_error < error) {
@@ -1025,15 +1045,19 @@ double distance_pid(double vector_mag, struct RoboAI *ai) {
     distance_check = 1;
   }
 
+  //double *distance_to_opp = near_opponent(ai);
   if(check_boundaries(ai)){
-  	drive_speed(output);
-  	all_stop();
+    //opponent_fsm(distance_to_opp);
+    drive_speed(output);
+    all_stop();
   } else {
-	turn_around();
+    turn_around();
   }
   pre_error = error;
   return error * distance_check;
  }
+
+
 
  // do a 180 turn
  void turn_around() {

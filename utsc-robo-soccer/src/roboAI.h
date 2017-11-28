@@ -137,7 +137,7 @@ int find_ball(struct RoboAI *ai);
 double dot_product(double v[], double u[], int n);
 double vector_magnitude(double *v, int n);
 double *ball_distance_vector(struct RoboAI *ai);
-double cos_pid(double cos_theta);
+double orient_pid(double cos_theta);
 double get_cos_theta_direction_distance(struct RoboAI *ai);
 double get_cos_theta(double *v, double *u);
 double distance_pid(double vector_mag, struct RoboAI *ai);
@@ -146,5 +146,7 @@ double heading_direction_cos_theta(struct RoboAI *ai);
 void direction_fsm(struct RoboAI *ai, int input);
 void turn_around();
 void my_pivot();
+double *near_opponent(struct RoboAI *ai);
+void opponent_fsm(double *distance);
 
 #endif
