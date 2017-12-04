@@ -576,11 +576,15 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         // if the ball is inside the threshold of the goal
         // kick the ball
         printf("We are in state 4\n");
-        kick();
-        retract();
-        ai->st.state -= 2; // go back to chasing the ball
+        kick(MAX_SPEED);
+        ai->st.state ++;
+
    }
 
+   if(ai->st.state == 5) {
+        kick_speed(-MAX_SPEED);
+        ai->st.state -= 3; // go back to chasing the ball
+   }
 
 //----------------------------------------------------- PENALTY SHOT
 
@@ -646,10 +650,14 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
       // if the ball is inside the threshold of the goal
         // kick the ball
       printf("We are in state 105\n");
-      kick();
-      retract();
+      kick_speed(MAX_SPEED);
       all_stop();
-    ai->st.state++;
+      ai->st.state ++;
+  }
+
+  if(ai->st.state == 106) {
+    kick_speed(-MAX_SPEED);
+    ai->st.state ++;
   }
 
   if(ai->st.state == 106){
@@ -670,23 +678,8 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
     if(find_ball(ai)) {
       double cos_theta = get_cos_theta_direction_distance(ai);
       double error = orient_pid(cos_theta);
-      printf("This is my dx %lf\n", ai->st.self->dx);
-      printf("This is my dy %lf\n", ai->st.self->dy);
 
       double *distance = ball_distance_vector(ai);
-
-      printf("This is my x position %lf\n", ai->st.self->cx);
-      printf("This is my y position %lf\n", ai->st.self->cy);
-
-      printf("This is ball x position %lf\n", ai->st.ball->cx);
-      printf("This is ball y position %lf\n", ai->st.ball->cy);
-
-      printf("This is distance dx %lf\n", distance[0]);
-      printf("This is distance dy %lf\n", distance[1]);
-
-
-      printf("This is my cos(theta) %lf\n", cos_theta);
-      printf("This is the angle %lf\n", error);
 
       // go to next state
       if((error <= EPS && error >= 0) || !(find_ball(ai))) {
@@ -728,9 +721,14 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         // if the ball is inside the threshold of the goal
         // kick the ball
         printf("We are in state 204\n");
-        kick();
-        retract();
-        ai->st.state -= 2; // go back to chasing the ball
+        kick(MAX_SPEED);
+        ai->st.state ++;        
+   }
+
+   if(ai->st.state == 205) {
+        kick_speed(-MAX_SPEED);
+        ai->st.state -= 3;
+
    }
 
 
@@ -754,6 +752,8 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
  You will lose marks if AI_main() is cluttered with code that doesn't belong
  there.
 **********************************************************************************/
+
+
 
 // figure out if the ball is even on the field
 int find_ball(struct RoboAI *ai) {
@@ -901,31 +901,29 @@ double *old_ball_distance(struct RoboAI *ai) {
 }
 
 // logic for dealing with opponent
-void opponent_fsm(double *distance) {
+void opponent_fsm(double distance) {
 
   // keep track of our last distance to opponent
   static double old_distance = 0;
-  // get the magnitude of the vector to opponent from our bot
-  double distance_to_opp = vector_magnitude(distance, 2);
   // check if we are too close to opponent
-  if(distance_to_opp <= 50) {
+  if(distance <= 50) {
     // go back
     reverse();
-    if(old_distance > distance_to_opp) {
+    if(old_distance > distance) {
       all_stop();
       reverse();
     }
   } 
-  old_distance = distance_to_opp;
+  old_distance = distance;
 }
 
 // PID controller to reduce cos theta to zero
 double orient_pid(double cos_theta) {
 
   double epsilon = 0.1;
-  double kp = 5;
-  double kd = 1;
-  double ki = 1;
+  double kp = 70.5;
+  double kd = 3;
+  double ki = 0.99;
 
   static double pre_error = 0;
   static double integral = 0;
@@ -995,9 +993,9 @@ void my_pivot(int n, int input) {
 double distance_pid(double vector_mag, struct RoboAI *ai) {
 
   double epsilon = 0.1;
-  double kp = 5;
-  double kd = 1;
-  double ki = 1;
+  double kp = 3.5;
+  double kd = 1.02;
+  double ki = 1.82;
 
   static double pre_error = 0;
   static double integral = 0;
@@ -1045,9 +1043,19 @@ double distance_pid(double vector_mag, struct RoboAI *ai) {
     distance_check = 1;
   }
 
-  //double *distance_to_opp = near_opponent(ai);
+  double sx = ai->st.self->cx;
+  double sy = ai->st.self->cy;
+
+  double ox = ai->st.opp->cx;
+  double oy = ai->st.opp->cy;
+
+  double x_df = sx - ox;
+  double y_df = sx - ox;
+
+  double distance_to_opp = sqrt(pow(x_df, 2) + pow(y_df, 2));
+
   if(check_boundaries(ai)){
-    //opponent_fsm(distance_to_opp);
+    opponent_fsm(distance_to_opp);
     drive_speed(output);
     all_stop();
   } else {

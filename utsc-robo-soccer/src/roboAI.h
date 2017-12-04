@@ -147,6 +147,6 @@ void direction_fsm(struct RoboAI *ai, int input);
 void turn_around();
 void my_pivot();
 double *near_opponent(struct RoboAI *ai);
-void opponent_fsm(double *distance);
+void opponent_fsm(double distance);
 
 #endif
